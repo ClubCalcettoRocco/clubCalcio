@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { Avatar, MatchCard, RatingChart, Section, StatBox } from '../components/ui'
+import AvatarUpload from '../components/AvatarUpload'
 import { fmt1, fmtDate, fullName } from '../lib/util'
 
 export default function PlayerProfile({ self = false }) {
@@ -20,6 +21,14 @@ export default function PlayerProfile({ self = false }) {
   const [photo, setPhoto] = useState(player?.photo_url || '')
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
+
+  useEffect(() => {
+    if (!player) return
+    setFirstName(player.first_name || '')
+    setLastName(player.last_name || '')
+    setRole(player.role_label || '')
+    setPhoto(player.photo_url || '')
+  }, [player?.id, player?.first_name, player?.last_name, player?.role_label, player?.photo_url])
 
   if (!player) return <p className="muted">Giocatore non trovato.</p>
 
@@ -41,7 +50,7 @@ export default function PlayerProfile({ self = false }) {
       {self && <button className="btn" onClick={() => setEdit(v => !v)}>{edit ? 'Chiudi' : 'Modifica'}</button>}
     </div>
 
-    {edit && <form className="card stack" onSubmit={saveProfile}><div className="two-col"><label>Nome<input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} /></label><label>Cognome<input className="input" value={lastName} onChange={e => setLastName(e.target.value)} /></label></div><label>Ruolo<input className="input" value={role} onChange={e => setRole(e.target.value)} placeholder="Attaccante, difensore…" /></label><label>URL foto<input className="input" value={photo} onChange={e => setPhoto(e.target.value)} placeholder="https://…" /></label>{err && <p className="error">{err}</p>}{msg && <p className="success">{msg}</p>}<button className="btn primary">Salva profilo</button></form>}
+    {edit && <form className="card stack" onSubmit={saveProfile}><div className="two-col"><label>Nome<input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} /></label><label>Cognome<input className="input" value={lastName} onChange={e => setLastName(e.target.value)} /></label></div><label>Ruolo<input className="input" value={role} onChange={e => setRole(e.target.value)} placeholder="Attaccante, difensore…" /></label><AvatarUpload userId={me.user_id} currentUrl={photo} onUploaded={setPhoto} size={96}/>{err && <p className="error">{err}</p>}{msg && <p className="success">{msg}</p>}<button className="btn primary">Salva profilo</button></form>}
 
     {msg && !edit && <p className="success">{msg}</p>}
     <div className="stats-grid six"><StatBox label="Presenze" value={stats?.presenze ?? 0}/><StatBox label="Gol" value={stats?.gol ?? 0} accent/><StatBox label="Assist" value={stats?.assist ?? 0}/><StatBox label="Media" value={fmt1(stats?.media_voto)}/><StatBox label="MVP" value={stats?.mvp ?? 0}/><StatBox label="Voti" value={stats?.valutazioni ?? 0}/></div>
