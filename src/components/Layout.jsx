@@ -18,6 +18,7 @@ export default function Layout({ children }) {
     <div className="shell">
       <div className="shell-noise" aria-hidden="true" />
 
+      {/* SIDEBAR DESKTOP */}
       <aside className="sidebar">
         <Link to="/" className="brand">
           <span className="brand-ball">⚽</span>
@@ -40,8 +41,12 @@ export default function Layout({ children }) {
           ))}
         </nav>
 
+        {/* ADMIN DESKTOP */}
         {isAdmin && (
-          <NavLink className="admin-nav" to="/admin/giocatori">
+          <NavLink
+            className="admin-nav"
+            to="/admin/giocatori"
+          >
             <span className="nav-icon">⚙</span>
             <span>Amministrazione</span>
           </NavLink>
@@ -70,6 +75,7 @@ export default function Layout({ children }) {
         </div>
       </aside>
 
+      {/* CONTENUTO */}
       <main className="content">
         <header className="topbar">
           <div className="breadcrumbs">
@@ -91,6 +97,7 @@ export default function Layout({ children }) {
         </div>
       </main>
 
+      {/* NAVIGAZIONE MOBILE */}
       <nav className="mobile-nav">
         {ITEMS.map(([to, label, icon]) => (
           <NavLink
@@ -102,6 +109,17 @@ export default function Layout({ children }) {
             <small>{label}</small>
           </NavLink>
         ))}
+
+        {/* ADMIN MOBILE */}
+        {isAdmin && (
+          <NavLink
+            to="/admin/giocatori"
+            className="mobile-admin"
+          >
+            <span>⚙</span>
+            <small>Admin</small>
+          </NavLink>
+        )}
       </nav>
     </div>
   )

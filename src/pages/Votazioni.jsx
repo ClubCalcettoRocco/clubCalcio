@@ -9,6 +9,8 @@ import {
   fmtTime
 } from '../lib/util'
 
+const VOTING_WINDOW_MS = 24 * 60 * 60 * 1000
+
 export default function Votazioni() {
   const {
     matches,
@@ -23,6 +25,18 @@ export default function Votazioni() {
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const [saved, setSaved] = useState(false)
+  const [now, setNow] = useState(Date.now())
+
+  /*
+   * Aggiorna il countdown ogni minuto.
+   */
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now())
+    }, 60 * 1000)
+
+    return () => window.clearInterval(timer)
+  }, [])
 
   /*
    * Solo partite già giocate.
@@ -31,8 +45,7 @@ export default function Votazioni() {
     () =>
       [...matches]
         .filter(
-          match =>
-            match.status === 'played'
+          match => match.status === 'played'
         )
         .sort(
           (a, b) =>
@@ -42,11 +55,13 @@ export default function Votazioni() {
     [matches]
   )
 
+  /*
+   * Partita selezionata.
+   */
   const selectedMatch = useMemo(
     () =>
       availableMatches.find(
-        match =>
-          match.id === selectedMatchId
+        match => match.id === selectedMatchId
       ) || null,
     [
       availableMatches,
@@ -62,9 +77,7 @@ export default function Votazioni() {
       return null
     }
 
-    return Object.values(
-      playersById
-    ).find(
+    return Object.values(playersById).find(
       player =>
         player.user_id === me.user_id
     ) || null
@@ -77,8 +90,7 @@ export default function Votazioni() {
    * Solo giocatori registrati della partita,
    * escluso il votante stesso.
    *
-   * Gli ospiti vengono esclusi perché
-   * player_id è NULL.
+   * Gli ospiti non possono ricevere voti.
    */
   const targets = useMemo(() => {
     if (!selectedMatch || !mePlayer) {
@@ -90,16 +102,12 @@ export default function Votazioni() {
         participant =>
           participant.player_id &&
           participant.player_id !== mePlayer.id &&
-          playersById[
-            participant.player_id
-          ]
+          playersById[participant.player_id]
       )
       .map(participant => ({
         ...participant,
         player:
-          playersById[
-            participant.player_id
-          ]
+          playersById[participant.player_id]
       }))
   }, [
     selectedMatch,
@@ -108,21 +116,59 @@ export default function Votazioni() {
   ])
 
   /*
-   * L'utente può votare solo se ha giocato.
+   * L'utente può votare solo se ha partecipato.
    */
-  const hasParticipation =
-    Boolean(
-      selectedMatch &&
-      mePlayer &&
-      selectedMatch.match_players.some(
-        participant =>
-          participant.player_id ===
-          mePlayer.id
-      )
+  const hasParticipation = Boolean(
+    selectedMatch &&
+    mePlayer &&
+    selectedMatch.match_players.some(
+      participant =>
+        participant.player_id === mePlayer.id
     )
+  )
+
+  /*
+   * Deadline:
+   * calcio d'inizio + 24 ore.
+   */
+  const votingDeadline = selectedMatch
+    ? new Date(selectedMatch.kickoff).getTime() +
+      VOTING_WINDOW_MS
+    : 0
+
+  const votesClosed =
+    Boolean(selectedMatch) &&
+    now >= votingDeadline
+
+  const votingRemaining = Math.max(
+    0,
+    votingDeadline - now
+  )
+
+  function formatRemaining(ms) {
+    const totalMinutes = Math.ceil(
+      ms / 60000
+    )
+
+    const hours = Math.floor(
+      totalMinutes / 60
+    )
+
+    const minutes =
+      totalMinutes % 60
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
+    }
+
+    return `${minutes}m`
+  }
 
   /*
    * Carica i voti già dati.
+   *
+   * I voti vengono caricati anche quando la finestra
+   * è chiusa, perché devono restare consultabili.
    */
   useEffect(() => {
     async function loadVotes() {
@@ -170,9 +216,7 @@ export default function Votazioni() {
           existingVote
             ? existingVote.rating == null
               ? 'SV'
-              : String(
-                  existingVote.rating
-                )
+              : String(existingVote.rating)
             : ''
       }
 
@@ -192,6 +236,13 @@ export default function Votazioni() {
     playerId,
     value
   ) {
+    /*
+     * Sicurezza anche lato frontend.
+     */
+    if (votesClosed) {
+      return
+    }
+
     setSaved(false)
     setErr('')
 
@@ -225,6 +276,16 @@ export default function Votazioni() {
       return
     }
 
+    /*
+     * Controllo frontend della scadenza.
+     */
+    if (votesClosed) {
+      setErr(
+        'Le votazioni sono chiuse. Sono trascorse 24 ore dal calcio d’inizio.'
+      )
+      return
+    }
+
     if (!allVoted) {
       setErr(
         'Assegna un voto oppure SV a tutti i giocatori.'
@@ -240,6 +301,7 @@ export default function Votazioni() {
       targets.map(target => ({
         target_player_id:
           target.player_id,
+
         rating:
           votes[
             target.player_id
@@ -252,16 +314,18 @@ export default function Votazioni() {
               )
       }))
 
-    const { error } =
-      await supabase.rpc(
-        'save_my_match_votes',
-        {
-          p_match_id:
-            selectedMatch.id,
-          p_votes:
-            payload
-        }
-      )
+    const {
+      error
+    } = await supabase.rpc(
+      'save_my_match_votes',
+      {
+        p_match_id:
+          selectedMatch.id,
+
+        p_votes:
+          payload
+      }
+    )
 
     if (error) {
       setErr(error.message)
@@ -275,6 +339,10 @@ export default function Votazioni() {
   return (
     <>
       <h1>Votazioni</h1>
+
+      {/* =========================
+          SELETTORE PARTITA
+          ========================= */}
 
       <div
         className="card stack"
@@ -322,6 +390,10 @@ export default function Votazioni() {
         </label>
       </div>
 
+      {/* =========================
+          NESSUNA PARTITA
+          ========================= */}
+
       {!selectedMatch && (
         <div className="card empty">
           <p className="muted">
@@ -330,6 +402,10 @@ export default function Votazioni() {
           </p>
         </div>
       )}
+
+      {/* =========================
+          NON HA PARTECIPATO
+          ========================= */}
 
       {selectedMatch &&
         mePlayer &&
@@ -342,6 +418,10 @@ export default function Votazioni() {
           </div>
         )}
 
+      {/* =========================
+          PROFILO NON TROVATO
+          ========================= */}
+
       {selectedMatch &&
         !mePlayer && (
           <div className="card empty">
@@ -352,17 +432,24 @@ export default function Votazioni() {
           </div>
         )}
 
+      {/* =========================
+          VOTAZIONE
+          ========================= */}
+
       {selectedMatch &&
         mePlayer &&
         hasParticipation && (
           <>
+            {/* HEADER PARTITA */}
+
             <div
               className="card"
               style={{
-                marginBottom: '32px'
+                marginBottom: '24px'
               }}
             >
               <div className="match-card-date">
+
                 <span className="match-kicker">
                   PARTITA
                 </span>
@@ -376,9 +463,11 @@ export default function Votazioni() {
                     selectedMatch.kickoff
                   )}
                 </span>
+
               </div>
 
               <div className="match-scoreboard">
+
                 <div className="match-team match-team-a">
                   <span className="team-name">
                     {selectedMatch.team_a_name}
@@ -402,10 +491,61 @@ export default function Votazioni() {
                     {selectedMatch.team_b_name}
                   </span>
                 </div>
+
               </div>
             </div>
 
+            {/* =========================
+                STATO VOTAZIONI
+                ========================= */}
+
+            <div
+              className={`notice vote-notice ${
+                votesClosed
+                  ? 'vote-notice-closed'
+                  : ''
+              }`}
+            >
+
+              {votesClosed ? (
+                <>
+                  <strong>
+                    🔒 Votazioni chiuse
+                  </strong>
+
+                  <span>
+                    Sono trascorse 24 ore
+                    dal calcio d'inizio.
+                    Puoi consultare i tuoi
+                    voti, ma non modificarli.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <strong>
+                    🗳️ Votazioni aperte
+                  </strong>
+
+                  <span>
+                    Hai ancora{' '}
+                    <b>
+                      {formatRemaining(
+                        votingRemaining
+                      )}
+                    </b>{' '}
+                    per votare.
+                  </span>
+                </>
+              )}
+
+            </div>
+
+            {/* =========================
+                GIOCATORI
+                ========================= */}
+
             <div className="section-head">
+
               <h2>
                 Vota i giocatori
               </h2>
@@ -414,30 +554,47 @@ export default function Votazioni() {
                 Gli ospiti e te stesso
                 non possono essere votati
               </span>
+
             </div>
 
-            <div className="card">
+            <div
+              className={`card ${
+                votesClosed
+                  ? 'ratings-locked'
+                  : ''
+              }`}
+            >
+
               {loading ? (
+
                 <p className="muted">
                   Caricamento voti…
                 </p>
+
               ) : targets.length === 0 ? (
+
                 <p className="muted">
-                  Non ci sono altri giocatori
-                  registrati da votare.
+                  Non ci sono altri
+                  giocatori registrati
+                  da votare.
                 </p>
+
               ) : (
+
                 targets.map(target => (
+
                   <div
                     key={target.player_id}
                     className="row rating-row"
                   >
+
                     <Avatar
                       player={target.player}
                       size={38}
                     />
 
                     <div className="grow">
+
                       <span>
                         {fullName(
                           target.player
@@ -445,8 +602,10 @@ export default function Votazioni() {
                       </span>
 
                       <small className="muted">
-                        {' '}({target.team})
+                        {' '}
+                        ({target.team})
                       </small>
+
                     </div>
 
                     <select
@@ -456,6 +615,7 @@ export default function Votazioni() {
                           target.player_id
                         ] ?? ''
                       }
+                      disabled={votesClosed}
                       onChange={e =>
                         setVote(
                           target.player_id,
@@ -463,6 +623,7 @@ export default function Votazioni() {
                         )
                       }
                     >
+
                       <option value="">
                         Voto…
                       </option>
@@ -473,20 +634,32 @@ export default function Votazioni() {
 
                       {Array.from(
                         { length: 21 },
-                        (_, i) => i * 0.5
+                        (_, i) =>
+                          i * 0.5
                       ).map(value => (
+
                         <option
                           key={value}
                           value={String(value)}
                         >
                           {value}
                         </option>
+
                       ))}
+
                     </select>
+
                   </div>
+
                 ))
+
               )}
+
             </div>
+
+            {/* =========================
+                MESSAGGI
+                ========================= */}
 
             {err && (
               <p className="error">
@@ -500,20 +673,28 @@ export default function Votazioni() {
               </p>
             )}
 
+            {/* =========================
+                SALVA
+                ========================= */}
+
             <button
               className="btn primary block"
               disabled={
                 saving ||
                 loading ||
+                votesClosed ||
                 !allVoted ||
                 targets.length === 0
               }
               onClick={saveVotes}
             >
-              {saving
-                ? 'Salvataggio…'
-                : 'Salva voti'}
+              {votesClosed
+                ? '🔒 Votazioni chiuse'
+                : saving
+                  ? 'Salvataggio…'
+                  : 'Salva voti'}
             </button>
+
           </>
         )}
     </>
