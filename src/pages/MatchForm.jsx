@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
+import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { Avatar } from '../components/ui'
 import {
@@ -16,10 +17,26 @@ function createGuestKey() {
     .slice(2)}`
 }
 
+function AssistantAvatar() {
+  return (
+    <svg className="assistant-avatar-art" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 5v5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="24" cy="4" r="3" fill="currentColor" />
+      <rect x="8" y="12" width="32" height="27" rx="10" fill="currentColor" opacity=".18" />
+      <rect x="10" y="14" width="28" height="23" rx="8" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="19" cy="24" r="2.4" fill="currentColor" />
+      <circle cx="29" cy="24" r="2.4" fill="currentColor" />
+      <path d="M19 30c2.8 2.6 7.2 2.6 10 0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M6 21v7m36-7v7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function MatchForm() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { matches, players, reload } = useData()
+  const { matches, players, statsById, reload } = useData()
+  const { session } = useAuth()
 
   const existing = id
     ? matches.find(m => m.id === id)
@@ -73,6 +90,11 @@ export default function MatchForm() {
 
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [assistantPrompt, setAssistantPrompt] = useState('')
+  const [assistantBusy, setAssistantBusy] = useState(false)
+  const [assistantMessage, setAssistantMessage] = useState('')
+  const [assistantAskedPrompt, setAssistantAskedPrompt] = useState('')
+  const [assistantOpen, setAssistantOpen] = useState(false)
 
   useEffect(() => {
     setF(initial)
@@ -273,6 +295,82 @@ export default function MatchForm() {
     return approvedPlayers.find(
       x => x.id === p.player_id
     )
+  }
+
+  async function buildTeamsWithAssistant() {
+    const roster = f.participants
+    const prompt = assistantPrompt.trim() || 'Dividi i giocatori in due squadre equilibrate, considerando ruolo e rendimento medio.'
+    if (roster.length !== max * 2) {
+      setAssistantMessage(`Aggiungi ${max * 2 - roster.length} giocatori per completare entrambe le squadre.`)
+      return
+    }
+
+    setAssistantAskedPrompt(prompt)
+    setAssistantBusy(true)
+    setAssistantMessage('')
+    try {
+      const response = await fetch('/api/build-squads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          prompt,
+          perTeam: max,
+          participants: roster.map(p => {
+            const player = participantPlayer(p)
+            const stats = player ? statsById[player.id] : null
+            return {
+              id: p.key,
+              name: participantName(p),
+              position: player?.position || 'Non specificato',
+              role: player?.role_label || '',
+              averageRating: stats?.media_voto ?? null,
+              goals: stats?.gol ?? 0,
+              assists: stats?.assist ?? 0,
+              games: stats?.presenze ?? 0
+            }
+          })
+        })
+      })
+      const responseText = await response.text()
+      let result
+      try {
+        result = responseText ? JSON.parse(responseText) : null
+      } catch {
+        result = null
+      }
+      if (!result || typeof result !== 'object') {
+        const contentType = response.headers.get('content-type') || ''
+        if (!response.ok) {
+          throw new Error(`Il server AI ha risposto con errore HTTP ${response.status}.`)
+        }
+        if (!contentType.includes('application/json')) {
+          throw new Error('L’endpoint AI non è raggiungibile: il server ha restituito la pagina dell’app invece della risposta API. Verifica il deploy della funzione su Vercel.')
+        }
+        throw new Error(`Il server AI ha restituito una risposta vuota o non valida (HTTP ${response.status}).`)
+      }
+      if (!response.ok) throw new Error(result.error || 'Non è stato possibile generare le squadre.')
+
+      const assignments = result.assignments
+      const validIds = new Set(roster.map(p => p.key))
+      const assignedIds = assignments.map(item => item.id)
+      if (assignments.length !== roster.length || new Set(assignedIds).size !== roster.length || assignedIds.some(key => !validIds.has(key)) || assignments.filter(item => item.team === 'A').length !== max || assignments.filter(item => item.team === 'B').length !== max || assignments.some(item => !['A', 'B'].includes(item.team))) {
+        throw new Error('La proposta ricevuta non rispetta il numero dei partecipanti. Riprova.')
+      }
+
+      const teamById = new Map(assignments.map(item => [item.id, item.team]))
+      setF(current => ({
+        ...current,
+        participants: current.participants.map(p => ({ ...p, team: teamById.get(p.key) }))
+      }))
+      setAssistantMessage(result.explanation || 'Squadre generate. Puoi ancora modificarle manualmente.')
+    } catch (error) {
+      setAssistantMessage(error.message || 'Errore durante la generazione delle squadre.')
+    } finally {
+      setAssistantBusy(false)
+    }
   }
 
   const valid =
@@ -978,6 +1076,61 @@ export default function MatchForm() {
           ? 'Salvataggio…'
           : 'Salva partita'}
       </button>
+
+      <div className="squad-assistant">
+        {assistantOpen && (
+          <section className="squad-chat-panel" id="squad-assistant-chat" aria-label="Chat per creare le squadre">
+            <header className="squad-chat-header">
+              <span className="assistant-avatar"><AssistantAvatar /></span>
+              <span className="squad-chat-heading">
+                <strong>Assistente squadre</strong>
+                <small>Pronto a comporre le formazioni</small>
+              </span>
+              <button type="button" className="squad-chat-close" onClick={() => setAssistantOpen(false)} aria-label="Chiudi la chat">×</button>
+            </header>
+
+            <div className="squad-chat-thread" aria-live="polite">
+              <div className="squad-chat-message assistant-message">
+                Ciao! Raccontami come vuoi creare le squadre. Posso bilanciare ruoli e rendimento, oppure seguire preferenze come tenere due persone insieme o dividerle.
+              </div>
+              {assistantAskedPrompt && <div className="squad-chat-message user-message">{assistantAskedPrompt}</div>}
+              {assistantBusy && <div className="squad-chat-message assistant-message typing-message"><span /><span /><span /></div>}
+              {assistantMessage && <div className="squad-chat-message assistant-message" role="status">{assistantMessage}</div>}
+            </div>
+
+            <form className="squad-chat-form" onSubmit={event => { event.preventDefault(); buildTeamsWithAssistant() }}>
+              <textarea
+                className="input textarea"
+                value={assistantPrompt}
+                onChange={event => setAssistantPrompt(event.target.value)}
+                rows="2"
+                maxLength={500}
+                placeholder="Es. Marco e Luca in squadre diverse…"
+                aria-label="Scrivi come vuoi comporre le squadre"
+              />
+              <button type="submit" className="btn primary" disabled={assistantBusy}>
+                {assistantBusy ? 'Creo…' : 'Crea squadre'}
+              </button>
+            </form>
+            <small className="squad-chat-hint">
+              {f.participants.length === max * 2
+                ? 'Puoi ancora modificare le assegnazioni a mano.'
+                : `Seleziona tutti i ${max * 2} partecipanti per avviare la composizione.`}
+            </small>
+          </section>
+        )}
+
+        <button
+          type="button"
+          className={`squad-assistant-launcher ${assistantOpen ? 'is-open' : ''}`}
+          onClick={() => setAssistantOpen(value => !value)}
+          aria-label={assistantOpen ? 'Chiudi assistente squadre' : 'Apri assistente squadre'}
+          aria-expanded={assistantOpen}
+          aria-controls={assistantOpen ? 'squad-assistant-chat' : undefined}
+        >
+          {assistantOpen ? <span className="assistant-launcher-close">×</span> : <AssistantAvatar />}
+        </button>
+      </div>
     </>
   )
 }

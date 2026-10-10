@@ -68,14 +68,15 @@ export function MatchCard({ m, featured = false }) {
 
 export function Lineups({ m, playersById, showRating = false }) {
   const col = (side, name) => (
-    <div className="lineup">
+    <div className={`lineup lineup-team lineup-team-${side.toLowerCase()}`}>
 
       <div className="lineup-title">
+        <span className="lineup-side">Squadra {side}</span>
         <h3>{name}</h3>
-        <span>
+        <span className="lineup-count">
           {m.match_players.filter(
             x => x.team === side
-          ).length}
+          ).length} giocatori
         </span>
       </div>
 
@@ -116,10 +117,10 @@ export function Lineups({ m, playersById, showRating = false }) {
           return (
             <div
               key={x.id}
-              className="row compact"
+              className="row compact guest-row"
             >
               <span
-                className="avatar"
+                className="avatar guest-avatar"
                 style={{
                   width: 34,
                   height: 34,
@@ -131,13 +132,9 @@ export function Lineups({ m, playersById, showRating = false }) {
                 👤
               </span>
 
-              <span className="grow row-name">
-                {x.guest_first_name}{' '}
-                {x.guest_last_name}
-
-                <small className="muted">
-                  {' '}· Ospite
-                </small>
+              <span className="grow row-name guest-name">
+                <span>{x.guest_first_name} {x.guest_last_name}</span>
+                <small className="pill guest-badge">Ospite</small>
               </span>
 
               {/* Gli ospiti non ricevono voti */}

@@ -15,11 +15,11 @@ export default function Rankings() {
   }), [stats])
   const labels = { gol: 'Marcatori', assist: 'Assist', media: 'Media voto', presenze: 'Presenze', mvp: 'MVP' }
   const value = s => tab === 'gol' ? s.gol : tab === 'assist' ? s.assist : tab === 'media' ? fmt1(s.media_voto) : tab === 'presenze' ? s.presenze : s.mvp
-  return <>
+  return <div className="leaderboard-page">
     <h1>Classifiche</h1>
     <div className="tabs scroll-tabs">{Object.entries(labels).map(([k, v]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{v}</button>)}</div>
     <Section title={labels[tab]}>
-      <div className="card leaderboard">{lists[tab].map((s, i) => playersById[s.player_id] && <PlayerRow key={s.player_id} player={playersById[s.player_id]} right={<><span className="rank">{i + 1}</span><strong>{value(s)}</strong></>} />)}</div>
+      <div className="card leaderboard">{lists[tab].map((s, i) => playersById[s.player_id] && <PlayerRow key={s.player_id} player={playersById[s.player_id]} right={<><span className={`rank ${i < 3 ? `rank-${i + 1}` : ''}`}>{i + 1}</span><strong className="leaderboard-value">{value(s)}</strong></>} />)}</div>
     </Section>
-  </>
+  </div>
 }

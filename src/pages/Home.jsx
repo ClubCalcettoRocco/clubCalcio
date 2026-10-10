@@ -67,7 +67,7 @@ export default function Home() {
     : null
 
   return (
-    <>
+    <div className="dashboard-page">
       {/* =========================
           HERO
           ========================= */}
@@ -114,9 +114,7 @@ export default function Home() {
           className="home-orb"
           aria-hidden="true"
         >
-          <span className="home-orb-core">
-            ⚽
-          </span>
+          <span className="home-orb-core">⚽</span>
         </div>
 
       </section>
@@ -391,6 +389,6 @@ export default function Home() {
         </div>
 
       </Section>
-    </>
+    </div>
   )
 }

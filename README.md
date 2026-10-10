@@ -31,10 +31,17 @@ where email = 'la-tua-email@example.com';
 ### Email confirmation
 Per i test puoi disattivare temporaneamente la conferma email in Supabase Auth. In produzione è preferibile mantenerla attiva.
 
+### Assistente AI per le squadre
+Nella creazione della partita, seleziona prima tutti i partecipanti e poi usa **Componi le squadre** per chiedere all'assistente una proposta in linguaggio naturale. La proposta resta modificabile dalla schermata.
+
+Il builder usa Groq con il modello `openai/gpt-oss-20b`. Crea una chiave dalla [console Groq](https://console.groq.com/keys) e configúrala come `GROQ_API_KEY` nelle variabili di Vercel e nel `.env` locale. `GROQ_MODEL` è facoltativa. La chiave va impostata solo sul server, mai con prefisso `VITE_`. In locale avvia `npm run dev`: il server Vite inoltra l'endpoint alla stessa funzione.
+
 ## Deploy
 Puoi fare il deploy su Vercel, Netlify o un hosting statico compatibile con SPA. Configura le variabili:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+
+L'endpoint AI incluso in `api/` viene eseguito da Vercel Functions; per Netlify o altri hosting occorre aggiungere l'equivalente funzione serverless e instradare `/api/build-squads`.
 
 Per un hosting SPA devi anche fare il fallback delle route a `index.html`.
 
