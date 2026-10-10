@@ -33,7 +33,11 @@ export default function MatchDetail() {
       <div className="meta">📍 {m.location}</div>
       {m.notes && <p className="muted">{m.notes}</p>}
     </div>
-    {isAdmin && <div className="actions"><Link to={`/partite/${id}/risultato`} className="btn primary">{played ? 'Modifica risultato' : 'Inserisci risultato'}</Link><Link to={`/partite/${id}/modifica`} className="btn">Modifica partita</Link><button className="btn danger" onClick={remove}>Elimina</button></div>}
+    {isAdmin && <div className="match-detail-actions">
+      <Link to={`/partite/${id}/risultato`} className="btn primary">{played ? 'Modifica risultato' : 'Inserisci risultato'}</Link>
+      <Link to={`/partite/${id}/modifica`} className="btn">Modifica partita</Link>
+      <button className="btn danger" onClick={remove}>Elimina partita</button>
+    </div>}
     {err && <p className="error">{err}</p>}
 
     {played && m.mvp_player_id && playersById[m.mvp_player_id] && <Section title="MVP"><div className="card"><PlayerRow player={playersById[m.mvp_player_id]} right={<span className="pill gold">MVP</span>} /></div></Section>}

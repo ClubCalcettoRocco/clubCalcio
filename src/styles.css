@@ -5446,3 +5446,48 @@ a:focus-visible,
     transform: none;
   }
 }
+
+/* Match detail actions: clear, full-width controls on small screens */
+.match-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 26px;
+}
+
+.match-detail-actions .btn {
+  display: inline-flex;
+  flex: 1 1 170px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 48px;
+  padding: 11px 16px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.match-detail-actions .btn.danger {
+  border-color: rgba(255, 123, 123, .42);
+  background: rgba(164, 42, 52, .2);
+  color: #ffe3e3;
+}
+
+@media (max-width: 680px) {
+  .match-detail-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin: 16px 0 24px;
+  }
+
+  .match-detail-actions .btn {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 15px;
+    border-radius: 13px;
+    font-size: 15px;
+  }
+}
