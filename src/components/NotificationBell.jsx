@@ -4,7 +4,10 @@ import { supabase } from '../lib/supabase'
 
 const TYPE_ICON = {
   match_created: '⚽',
-  result_entered: '📊',
+  match_invited: '⚽',
+  match_not_invited: '📭',
+  match_cancelled: '🛑',
+  result_entered: '🏆',
   voting_open: '🗳️',
   match_reminder_24h: '⏰',
   match_reminder_3h: '⏰'
