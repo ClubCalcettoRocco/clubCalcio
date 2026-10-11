@@ -977,13 +977,13 @@ p {
   position: relative;
   overflow: hidden;
 
-  border-color: rgba(139, 74, 91, 0.42);
+  border-color: rgba(25, 196, 119, 0.5);
 
-  background: linear-gradient(135deg, #915263, #76404f);
+  background: linear-gradient(135deg, #19c477, #087f55);
 
-  color: #fff8f5;
+  color: #f5fff9;
 
-  box-shadow: 0 12px 28px rgba(139, 74, 91, 0.15);
+  box-shadow: 0 12px 28px rgba(25, 196, 119, 0.22);
 }
 
 .btn.primary::after {
