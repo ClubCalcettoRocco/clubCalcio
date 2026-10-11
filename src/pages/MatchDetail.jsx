@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useData } from '../lib/data'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
-import { Lineups, PlayerRow, Section, EmptyState } from '../components/ui'
+import { FormationPitch, Lineups, PlayerRow, Section, EmptyState } from '../components/ui'
 import { TYPES, fmtDate, fmtTime } from '../lib/util'
 
 export default function MatchDetail() {
@@ -41,6 +41,7 @@ export default function MatchDetail() {
     {err && <p className="error">{err}</p>}
 
     {played && m.mvp_player_id && playersById[m.mvp_player_id] && <Section title="MVP"><div className="card"><PlayerRow player={playersById[m.mvp_player_id]} right={<span className="pill gold">MVP</span>} /></div></Section>}
+    <Section title="In campo"><div className="card pitch-card"><FormationPitch m={m} playersById={playersById} showRating={played} /></div></Section>
     <Section title="Formazioni"><div className="card"><Lineups m={m} playersById={playersById} showRating={played} /></div></Section>
 
     {played && <Section title="Marcatori e assist">

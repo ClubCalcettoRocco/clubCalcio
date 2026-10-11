@@ -10,7 +10,7 @@ import BadgeCard from '../components/BadgeCard'
 
 import {
   Avatar,
-  RatingChart,
+  TrendChart,
   Section,
   StatBox
 } from '../components/ui'
@@ -41,6 +41,7 @@ export default function PlayerProfile({ self = false }) {
   const stats = statsById[playerId]
 
   const [edit, setEdit] = useState(false)
+  const [trendTab, setTrendTab] = useState('media')
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -166,29 +167,27 @@ export default function PlayerProfile({ self = false }) {
    * =========================================================
    */
 
-  const points = useMemo(
-    () =>
-      history
-        .filter(
-          m =>
-            m.match_players.find(
-              x => x.player_id === playerId
-            )?.rating != null
-        )
-        .reverse()
-        .map(m => {
-          const playerMatch =
-            m.match_players.find(
-              x => x.player_id === playerId
-            )
+  const trends = useMemo(() => {
+    let appearances = 0
+    let goals = 0
+    return [...history].reverse().map(match => {
+      const playerMatch = match.match_players.find(x => x.player_id === playerId)
+      appearances += 1
+      goals += match.goals.filter(g => g.scorer_id === playerId && !g.own_goal).length
+      return {
+        label: fmtDate(match.kickoff),
+        media: playerMatch?.rating == null ? null : Number(playerMatch.rating),
+        presenze: appearances,
+        gol: goals
+      }
+    })
+  }, [history, playerId])
 
-          return {
-            value: Number(playerMatch.rating),
-            label: fmtDate(m.kickoff)
-          }
-        }),
-    [history, playerId]
-  )
+  const trendConfig = {
+    media: { label: 'Media voto', color: 'var(--accent-2)', value: trends.filter(p => p.media != null).map(p => ({ label: p.label, value: p.media })) },
+    presenze: { label: 'Presenze totali', color: '#68d7aa', value: trends.map(p => ({ label: p.label, value: p.presenze })) },
+    gol: { label: 'Gol totali', color: '#ffbd69', value: trends.map(p => ({ label: p.label, value: p.gol })) }
+  }[trendTab]
 
   /*
    * =========================================================
@@ -329,9 +328,12 @@ export default function PlayerProfile({ self = false }) {
             {fullName(player)}
           </h1>
 
-          <p className="muted">
-            {player.role_label || 'Giocatore'}
-          </p>
+          <p className="muted">{player.role_label || 'Giocatore'}</p>
+          <div className="profile-tags">
+            <span>{player.position || 'Ruolo da definire'}</span>
+            <span>{player.preferred_foot ? `Piede ${player.preferred_foot.toLowerCase()}` : 'Piede da definire'}</span>
+            {player.play_style && <span>{player.play_style}</span>}
+          </div>
         </div>
 
         {self && (
@@ -636,11 +638,15 @@ export default function PlayerProfile({ self = false }) {
           ANDAMENTO VOTI
           ===================================================== */}
 
-      <Section title="Andamento voti">
+      <Section title="Andamento statistiche">
         <div className="card chart-wrap">
-          <RatingChart
-            points={points}
-          />
+          <div className="trend-chart-head">
+            <div><span className="eyebrow">NEL TEMPO</span><h3>{trendConfig.label}</h3></div>
+            <div className="tabs trend-tabs" aria-label="Seleziona statistica">
+              {[['media', 'Media'], ['presenze', 'Presenze'], ['gol', 'Gol']].map(([key, label]) => <button key={key} className={trendTab === key ? 'on' : ''} onClick={() => setTrendTab(key)}>{label}</button>)}
+            </div>
+          </div>
+          <TrendChart points={trendConfig.value} label={`Andamento ${trendConfig.label.toLowerCase()}`} color={trendConfig.color} emptyMessage="Servono voti registrati per mostrare la media." />
         </div>
       </Section>
 

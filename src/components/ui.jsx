@@ -153,6 +153,55 @@ export function Lineups({ m, playersById, showRating = false }) {
   )
 }
 
+export function FormationPitch({ m, playersById, showRating = false }) {
+  const side = (team, label) => (
+    <div className={`pitch-side pitch-side-${team.toLowerCase()}`}>
+      <strong className="pitch-team-label"><span>{label}</span><small>{(m.match_players || []).filter(x => x.team === team).length} giocatori</small></strong>
+      <div className="pitch-roster">
+        {(m.match_players || []).filter(x => x.team === team).map((entry, index) => {
+          const player = entry.player_id ? playersById[entry.player_id] : null
+          const name = player
+            ? `${player.first_name || ''} ${player.last_name || ''}`.trim()
+            : `${entry.guest_first_name || 'Ospite'} ${entry.guest_last_name || ''}`.trim()
+          const position = player?.position === 'Portiere' ? 'POR'
+            : player?.position === 'Difensore' ? 'DIF'
+              : player?.position === 'Centrocampista' ? 'CEN'
+                : player?.position === 'Attaccante' ? 'ATT' : ''
+          return (
+            <div className="pitch-player" key={entry.id || entry.player_id || `${team}-${index}`} style={{ '--player-index': index }} title={name}>
+              <span className="pitch-avatar-wrap">
+                {player
+                  ? <Avatar player={player} size={42} />
+                  : <span className="avatar pitch-guest">👤</span>}
+                {position && <span className="pitch-player-role">{position}</span>}
+              </span>
+              <span className="pitch-player-name">{name}</span>
+              {showRating && entry.rating != null && <span className="pitch-rating">{Number(entry.rating).toFixed(1)}</span>}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="football-pitch" role="img" aria-label={`Formazioni in campo: ${m.team_a_name} e ${m.team_b_name}`}>
+      <div className="pitch-line pitch-midline" />
+      <div className="pitch-center-circle" />
+      {side('A', m.team_a_name)}
+      {side('B', m.team_b_name)}
+      <div className="pitch-box pitch-box-left" />
+      <div className="pitch-box pitch-box-right" />
+      <div className="pitch-six-yard pitch-six-yard-left" />
+      <div className="pitch-six-yard pitch-six-yard-right" />
+      <div className="pitch-spot pitch-spot-left" />
+      <div className="pitch-spot pitch-spot-right" />
+      <div className="pitch-goal pitch-goal-left" />
+      <div className="pitch-goal pitch-goal-right" />
+    </div>
+  )
+}
+
 export function RatingChart({ points }) {
   if (!points.length) return <p className="muted">Nessun voto registrato.</p>
   const W = 340, H = 200, L = 30, R = 10, T = 10, B = 22, MIN = 0, MAX = 10
@@ -169,6 +218,30 @@ export function RatingChart({ points }) {
       ))}
       <path d={path} fill="none" stroke="var(--accent-2)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {points.map((p, i) => <circle key={i} cx={x(i)} cy={y(p.value)} r="4.5" fill="var(--accent-2)" stroke="var(--card)" strokeWidth="2"><title>{p.label}: {p.value}</title></circle>)}
+    </svg>
+  )
+}
+
+export function TrendChart({ points, label, color = 'var(--accent-2)', emptyMessage = 'Dati insufficienti per mostrare l’andamento.' }) {
+  if (!points.length) return <p className="muted">{emptyMessage}</p>
+  const W = 520, H = 190, L = 34, R = 12, T = 14, B = 28
+  const max = Math.max(1, ...points.map(point => Number(point.value) || 0))
+  const rawMin = Math.min(...points.map(point => Number(point.value) || 0))
+  const min = rawMin === 0 ? 0 : Math.max(0, Math.floor(rawMin - 1))
+  const x = i => points.length === 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (points.length - 1)
+  const y = value => T + ((max - value) * (H - T - B)) / (max - min || 1)
+  const path = points.map((point, i) => `${i ? 'L' : 'M'}${x(i)},${y(Number(point.value) || 0)}`).join(' ')
+  const area = `${path} L${x(points.length - 1)},${H - B} L${x(0)},${H - B} Z`
+  const ticks = [...new Set([min, Math.round((min + max) / 2), max])]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="chart trend-chart" role="img" aria-label={label}>
+      <defs><linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".28" /><stop offset="100%" stopColor={color} stopOpacity="0" /></linearGradient></defs>
+      {ticks.map(value => <g key={value}><line x1={L} x2={W - R} y1={y(value)} y2={y(value)} stroke="var(--border)" strokeWidth="1" /><text x={L - 7} y={y(value) + 4} textAnchor="end" fontSize="10" fill="var(--muted)">{value}</text></g>)}
+      <path d={area} fill="url(#trend-fill)" />
+      <path d={path} fill="none" stroke={color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      {points.map((point, index) => <circle key={`${point.label}-${index}`} cx={x(index)} cy={y(Number(point.value) || 0)} r="4" fill={color} stroke="var(--card)" strokeWidth="2"><title>{point.label}: {point.value}</title></circle>)}
+      <text x={L} y={H - 6} textAnchor="start" fontSize="10" fill="var(--muted)">{points[0]?.label}</text>
+      {points.length > 1 && <text x={W - R} y={H - 6} textAnchor="end" fontSize="10" fill="var(--muted)">{points[points.length - 1]?.label}</text>}
     </svg>
   )
 }

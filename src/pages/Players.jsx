@@ -55,6 +55,11 @@ export default function Players() {
                   {p.role_label || 'Giocatore'}
                 </span>
 
+                <div className="player-profile-tags">
+                  <span>{p.position || 'Ruolo —'}</span>
+                  <span>{p.preferred_foot || 'Piede —'}</span>
+                </div>
+
                 <div className="mini-stats">
                   <span>⚽ {s?.gol || 0}</span>
                   <span>
