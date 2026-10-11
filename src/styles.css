@@ -5706,52 +5706,89 @@ a:focus-visible,
   }
 }
 
-.avatar-background-tool {
-  display: grid;
-  gap: 14px;
-  margin-top: 22px;
+.profile-edit-panel {
+  margin-bottom: 30px;
+  transform-origin: top center;
+  animation: profile-editor-enter 320ms cubic-bezier(.2, .75, .25, 1) both;
 }
 
-.avatar-background-tool h2 {
-  margin: 5px 0 4px;
+.profile-card-shift {
+  animation: profile-card-settle 380ms cubic-bezier(.2, .75, .25, 1) both;
 }
 
-.avatar-background-tool p {
-  margin: 0;
+@keyframes profile-editor-enter {
+  from { opacity: 0; transform: translateY(-14px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.avatar-background-actions {
+@keyframes profile-card-settle {
+  from { opacity: .82; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-edit-panel,
+  .profile-card-shift {
+    animation: none;
+  }
+}
+
+.pwa-update-prompt {
+  position: fixed;
+  z-index: 1200;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  align-items: center;
+  gap: 14px;
+  width: min(520px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 18px;
+  background: rgba(12, 24, 38, .96);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .42);
+  backdrop-filter: blur(16px);
+  animation: profile-editor-enter 240ms ease-out both;
 }
 
-.avatar-background-progress {
+.pwa-update-copy {
   display: grid;
-  gap: 8px;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
 }
 
-.avatar-background-progress progress {
-  width: 100%;
-  height: 8px;
-  accent-color: var(--accent-2);
+.pwa-update-copy strong {
+  color: #fff;
+  font-size: 14px;
 }
 
-.avatar-background-errors {
-  margin: 0;
-  padding-left: 20px;
-  color: #ffc8c8;
-  overflow-wrap: anywhere;
+.pwa-update-copy span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-@media (max-width: 680px) {
-  .avatar-background-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
+.pwa-update-dismiss {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .pwa-update-prompt {
+    right: 12px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    gap: 9px;
+    padding: 12px;
   }
 
-  .avatar-background-actions .btn {
-    width: 100%;
-    min-height: 48px;
+  .pwa-update-prompt .btn {
+    min-height: 42px;
+    padding: 9px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwa-update-prompt {
+    animation: none;
   }
 }

@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
       localApi(),
       react(),
       VitePWA({
-        registerType: 'autoUpdate',
+        registerType: 'prompt',
         includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
         workbox: {
           globIgnores: ['**/*.wasm'],

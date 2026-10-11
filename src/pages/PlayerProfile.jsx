@@ -349,35 +349,12 @@ export default function PlayerProfile({ self = false }) {
       </div>
 
       {/* =====================================================
-          PLAYER CARD
-          ===================================================== */}
-
-      <section className="player-card-section">
-        <div className="player-card-heading">
-          <span className="eyebrow">
-            PLAYER CARD
-          </span>
-
-          <h2>
-            La tua carta
-          </h2>
-        </div>
-
-        <PlayerCard
-          player={player}
-          stats={stats}
-          matches={history}
-          playerId={playerId}
-        />
-      </section>
-
-      {/* =====================================================
           MODIFICA PROFILO
           ===================================================== */}
 
       {edit && (
         <form
-          className="card stack"
+          className="card stack profile-edit-panel"
           onSubmit={saveProfile}
         >
           <div className="two-col">
@@ -594,6 +571,29 @@ export default function PlayerProfile({ self = false }) {
           {msg}
         </p>
       )}
+
+      {/* =====================================================
+          PLAYER CARD
+          ===================================================== */}
+
+      <section className={`player-card-section${edit ? ' profile-card-shift' : ''}`}>
+        <div className="player-card-heading">
+          <span className="eyebrow">
+            PLAYER CARD
+          </span>
+
+          <h2>
+            La tua carta
+          </h2>
+        </div>
+
+        <PlayerCard
+          player={player}
+          stats={stats}
+          matches={history}
+          playerId={playerId}
+        />
+      </section>
 
       {/* =====================================================
           STATISTICHE

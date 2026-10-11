@@ -33,11 +33,15 @@ Esegui `supabase/notifications.sql` nel SQL Editor di Supabase. I giocatori appr
 
 #### Web Push (avvisi anche con l'app chiusa)
 1. Genera una coppia VAPID una sola volta con `npx web-push generate-vapid-keys --json`. Conserva la chiave privata solo come segreto server; non inserirla in `VITE_` e non committarla.
-2. In **Vercel → Settings → Environment Variables**, configura `VITE_VAPID_PUBLIC_KEY` (pubblica), `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (un indirizzo reale, per esempio `mailto:admin@tuodominio.it`), `SUPABASE_SECRET_KEY` (solo server, mai con prefisso `VITE_`) e `PUSH_WEBHOOK_SECRET` (un segreto casuale condiviso col webhook). La URL Supabase (`VITE_SUPABASE_URL`) deve già essere configurata.
-3. Ridistribuisci il sito su Vercel. Poi, in **Database → Webhooks** di Supabase, crea un webhook sulla tabella `public.notifications`, evento `INSERT`, URL `https://<dominio-del-tuo-sito>/api/send-push` e header `Authorization: Bearer <PUSH_WEBHOOK_SECRET>`.
-4. Esegui `supabase/notifications.sql` se non l'hai già fatto. Accedi dal sito e premi **Notifiche → Attiva** su ogni dispositivo.
+2. In **Vercel → Settings → Environment Variables**, configura `VITE_VAPID_PUBLIC_KEY` (pubblica), `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (un indirizzo reale, per esempio `mailto:admin@tuodominio.it`), `SUPABASE_SECRET_KEY` (solo server, mai con prefisso `VITE_`) e `PUSH_WEBHOOK_SECRET`. La URL Supabase (`VITE_SUPABASE_URL`) deve già essere configurata.
+3. In Supabase abilita `pg_net`, crea in **Database → Vault** il secret `push_webhook_secret` con lo stesso valore di `PUSH_WEBHOOK_SECRET`, poi esegui `supabase/notifications.sql` e `supabase/push-webhook-net.sql` nel SQL Editor. Il secondo file invia le push con `net.http_post` senza dipendere dall’integrazione Database Webhooks.
+4. Per i promemoria, esegui anche `supabase/match-reminders.sql`: programma un controllo ogni 15 minuti e crea notifiche a 24 ore e circa 3 ore dalla partita per i giocatori assegnati. Accedi dal sito e premi **Notifiche → Attiva** su ogni dispositivo.
+5. Ridistribuisci il sito su Vercel dopo aver impostato o modificato le variabili.
 
 La campanella in app continua a funzionare. Su iPhone aggiungi prima il sito alla schermata Home e consenti le notifiche; il Web Push per web app su iOS richiede iOS 16.4 o successivo.
+
+### Aggiornamenti della PWA
+Quando viene pubblicato un nuovo deploy, l'app controlla gli aggiornamenti mentre è aperta e mostra **Nuova versione disponibile**. Chi la sta usando può scegliere quando ricaricare, così non perde i dati di un modulo in compilazione. Il controllo richiede che l'app sia online e in primo piano.
 
 ### Email confirmation
 Per i test puoi disattivare temporaneamente la conferma email in Supabase Auth. In produzione è preferibile mantenerla attiva.

@@ -16,6 +16,7 @@ import { DataProvider } from './lib/data'
 import Layout from './components/Layout'
 
 import { Spinner } from './components/ui'
+import PwaUpdatePrompt from './components/PwaUpdatePrompt'
 
 import Login from './pages/Login'
 import Home from './pages/Home'
@@ -119,9 +120,11 @@ function AdminOnly({ children }) {
 }
 
 
-export default function App() {
+export default function App({ updateServiceWorker }) {
   return (
     <BrowserRouter>
+
+      <PwaUpdatePrompt updateServiceWorker={updateServiceWorker} />
 
       <AuthProvider>
 

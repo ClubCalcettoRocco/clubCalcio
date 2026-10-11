@@ -190,11 +190,11 @@ export default function AvatarUpload({
               ? processing
                 ? 'Rimozione sfondo…'
                 : 'Caricamento…'
-              : '📷 Scegli foto'}
+              : '📷 Scegli foto e rimuovi sfondo'}
           </button>
 
           <span className="muted small-text">
-            JPG, PNG, WEBP · massimo 5 MB · sfondo rimosso automaticamente
+            JPG, PNG, WEBP · massimo 5 MB · la rimozione dello sfondo viene applicata solo a questa foto
           </span>
 
           {processingProgress && (
