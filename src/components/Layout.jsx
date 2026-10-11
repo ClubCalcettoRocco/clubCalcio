@@ -1,5 +1,6 @@
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import NotificationBell from './NotificationBell'
 
 const ITEMS = [
   ['/', 'Home', '⌂'],
@@ -82,6 +83,8 @@ export default function Layout({ children }) {
             {location.pathname === '/' ? 'Dashboard' : 'Calcetto Club'}
           </div>
 
+          <div className="topbar-actions">
+            <NotificationBell userId={me?.user_id} />
           {isAdmin && (
             <Link
               to="/partite/nuova"
@@ -90,6 +93,7 @@ export default function Layout({ children }) {
               + Nuova partita
             </Link>
           )}
+          </div>
         </header>
 
         <div className="page-wrap">

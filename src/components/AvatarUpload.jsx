@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { removeImageBackground } from '../lib/removeImageBackground'
 
 export default function AvatarUpload({
   currentUrl,
@@ -11,6 +12,8 @@ export default function AvatarUpload({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [preview, setPreview] = useState(currentUrl || '')
+  const [processing, setProcessing] = useState(false)
+  const [processingProgress, setProcessingProgress] = useState('')
 
   async function handleChange(e) {
     const file = e.target.files && e.target.files[0]
@@ -36,10 +39,23 @@ export default function AvatarUpload({
 
     // Anteprima locale immediata
     const localPreview = URL.createObjectURL(file)
+    let processedPreview = ''
     setPreview(localPreview)
     setUploading(true)
 
     try {
+      setProcessing(true)
+      setProcessingProgress('Carico il modello di rimozione sfondo…')
+      const processedFile = await removeImageBackground(file, ({ current, total }) => {
+        if (total > 0) {
+          setProcessingProgress(`Preparo il modello… ${Math.round((current / total) * 100)}%`)
+        }
+      })
+      processedPreview = URL.createObjectURL(processedFile)
+      setPreview(processedPreview)
+      setProcessing(false)
+      setProcessingProgress('Carico la foto…')
+
       // Recupera l'utente attualmente autenticato
       const {
         data: { user },
@@ -56,31 +72,25 @@ export default function AvatarUpload({
         )
       }
 
-      // Estensione del file
-      const extension =
-        (file.name.split('.').pop() || 'jpg')
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '') || 'jpg'
-
       /*
        * Struttura:
        *
        * avatars/
        *   USER_ID/
-       *     UUID.jpg
+       *     UUID.png
        *
        * USER_ID è auth.uid(), quindi coincide con
        * quello controllato dalle Storage Policies.
        */
-      const path = `${user.id}/${crypto.randomUUID()}.${extension}`
+      const path = `${user.id}/${processedFile.name}`
 
       // Upload su Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, {
+        .upload(path, processedFile, {
           cacheControl: '3600',
           upsert: false,
-          contentType: file.type
+          contentType: processedFile.type
         })
 
       if (uploadError) {
@@ -99,6 +109,8 @@ export default function AvatarUpload({
       }
 
       // Comunica al componente padre il nuovo URL
+      setPreview(data.publicUrl)
+      if (processedPreview) URL.revokeObjectURL(processedPreview)
       onUploaded(data.publicUrl)
 
     } catch (err) {
@@ -106,6 +118,7 @@ export default function AvatarUpload({
 
       // Torna alla foto precedente
       setPreview(currentUrl || '')
+      if (processedPreview) URL.revokeObjectURL(processedPreview)
 
       setError(
         err?.message ||
@@ -113,6 +126,8 @@ export default function AvatarUpload({
       )
     } finally {
       URL.revokeObjectURL(localPreview)
+      setProcessing(false)
+      setProcessingProgress('')
       setUploading(false)
     }
   }
@@ -172,13 +187,21 @@ export default function AvatarUpload({
             disabled={uploading}
           >
             {uploading
-              ? 'Caricamento…'
+              ? processing
+                ? 'Rimozione sfondo…'
+                : 'Caricamento…'
               : '📷 Scegli foto'}
           </button>
 
           <span className="muted small-text">
-            JPG, PNG, WEBP · massimo 5 MB
+            JPG, PNG, WEBP · massimo 5 MB · sfondo rimosso automaticamente
           </span>
+
+          {processingProgress && (
+            <span className="muted small-text" role="status">
+              {processingProgress}
+            </span>
+          )}
 
         </div>
       </div>

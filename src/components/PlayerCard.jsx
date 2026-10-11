@@ -545,6 +545,16 @@ export default function PlayerCard({
 
   const data = useMemo(() => {
 
+    const normalizedName = [player?.first_name, player?.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLocaleLowerCase('it')
+    const isIconaCard = normalizedName === 'paolo musicante'
+    const isTotyCard = normalizedName === 'leonardo ciaglia'
+
     /* -----------------------------------------------------
        ATTRIBUTI
     ----------------------------------------------------- */
@@ -582,7 +592,7 @@ export default function PlayerCard({
       ) * experienceFactor
 
 
-    const overall =
+    const calculatedOverall =
       clamp(
         stabilizedOverall
       )
@@ -593,7 +603,7 @@ export default function PlayerCard({
     ----------------------------------------------------- */
 
     const automaticRarity =
-      getRarity(overall)
+      getRarity(calculatedOverall)
 
 
     /* -----------------------------------------------------
@@ -614,9 +624,12 @@ export default function PlayerCard({
       la rarità reale.
     */
 
-    const rarity =
-      forcedRarity ||
-      automaticRarity
+    const overall = isIconaCard ? 99 : calculatedOverall
+    const rarity = isIconaCard
+      ? 'prime'
+      : isTotyCard
+        ? 'toty'
+        : forcedRarity || automaticRarity
 
 
     /* -----------------------------------------------------
@@ -635,6 +648,10 @@ export default function PlayerCard({
       attributes,
 
       overall,
+
+      isIconaCard,
+
+      isTotyCard,
 
       rarity,
 
@@ -656,6 +673,7 @@ export default function PlayerCard({
   const {
     attributes,
     overall,
+    isIconaCard,
     rarity,
     automaticRarity,
     form
@@ -698,7 +716,7 @@ export default function PlayerCard({
 
     <div
       className={
-        `fifa-card fifa-card-${rarity}`
+        `fifa-card fifa-card-${rarity}${data.isIconaCard ? ' fifa-card-icona' : ''}${data.isTotyCard ? ' fifa-card-toty-special' : ''}`
       }
     >
 
@@ -749,6 +767,14 @@ export default function PlayerCard({
             PREVIEW
           </div>
 
+        )}
+
+        {data.isIconaCard && (
+          <div className="fifa-card-icona-label">ICONA</div>
+        )}
+
+        {data.isTotyCard && (
+          <div className="fifa-card-toty-label">TOTY</div>
         )}
 
 

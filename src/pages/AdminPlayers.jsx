@@ -5,6 +5,10 @@ import { supabase } from '../lib/supabase'
 import { Avatar } from '../components/ui'
 import { fullName } from '../lib/util'
 import AvatarUpload from '../components/AvatarUpload'
+import {
+  removeBackgroundFromProfiles,
+  restoreOriginalProfilePhotos
+} from '../lib/avatarBackgroundBatch'
 
 export default function AdminPlayers() {
   const { players, reload } = useData()
@@ -13,6 +17,10 @@ export default function AdminPlayers() {
   const [open, setOpen] = useState(null)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const [backgroundJob, setBackgroundJob] = useState(null)
+  const [backgroundMessage, setBackgroundMessage] = useState('')
+  const [backgroundErrors, setBackgroundErrors] = useState([])
+  const [backgroundError, setBackgroundError] = useState('')
 
   const [form, setForm] = useState({
     first_name: '',
@@ -34,6 +42,13 @@ export default function AdminPlayers() {
   const pendingPlayers = players.filter(
     p => p.approved === false
   )
+
+  const photosToProcess = players.filter(
+    p => p.photo_url && !p.photo_url_original
+  ).length
+  const photosToRestore = players.filter(
+    p => p.photo_url_original
+  ).length
 
   function start(p) {
     setOpen(p.id)
@@ -82,6 +97,66 @@ export default function AdminPlayers() {
     }
 
     await reload()
+  }
+
+  async function processAllPhotoBackgrounds() {
+    setBackgroundError('')
+    setBackgroundMessage('')
+    setBackgroundErrors([])
+
+    if (!photosToProcess) {
+      setBackgroundMessage('Non ci sono foto da elaborare.')
+      return
+    }
+
+    const { error: schemaError } = await supabase
+      .from('players')
+      .select('photo_url_original')
+      .limit(1)
+
+    if (schemaError) {
+      setBackgroundError('Prima esegui supabase/avatar-background-history.sql nel SQL Editor di Supabase, poi ricarica questa pagina.')
+      return
+    }
+
+    if (!window.confirm(`Rimuovere lo sfondo da ${photosToProcess} foto? Gli originali resteranno salvati e potrai ripristinarli da qui.`)) return
+
+    setBackgroundJob({ action: 'remove', done: 0, total: photosToProcess })
+    try {
+      const result = await removeBackgroundFromProfiles(players, me?.user_id, progress => {
+        setBackgroundJob(current => ({ ...current, ...progress }))
+      })
+      await reload()
+      setBackgroundErrors(result.errors)
+      setBackgroundMessage(`${result.success} foto aggiornate${result.errors.length ? `, ${result.errors.length} non riuscite` : ''}.`)
+    } catch (error) {
+      setBackgroundError(error?.message || 'Errore durante l’elaborazione delle foto.')
+    } finally {
+      setBackgroundJob(null)
+    }
+  }
+
+  async function restoreAllPhotoBackgrounds() {
+    setBackgroundError('')
+    setBackgroundMessage('')
+    setBackgroundErrors([])
+
+    if (!photosToRestore) return
+    if (!window.confirm(`Ripristinare le foto originali di ${photosToRestore} profili?`)) return
+
+    setBackgroundJob({ action: 'restore', done: 0, total: photosToRestore })
+    try {
+      const result = await restoreOriginalProfilePhotos(players, progress => {
+        setBackgroundJob(current => ({ ...current, ...progress }))
+      })
+      await reload()
+      setBackgroundErrors(result.errors)
+      setBackgroundMessage(`${result.success} foto originali ripristinate${result.errors.length ? `, ${result.errors.length} non riuscite` : ''}.`)
+    } catch (error) {
+      setBackgroundError(error?.message || 'Errore durante il ripristino delle foto.')
+    } finally {
+      setBackgroundJob(null)
+    }
   }
 
   async function reject(p) {
@@ -138,6 +213,71 @@ export default function AdminPlayers() {
         devono essere approvati prima di comparire tra
         i giocatori.
       </div>
+
+      <section className="card avatar-background-tool">
+        <div>
+          <span className="eyebrow">FOTO PROFILO</span>
+          <h2>Sfondo trasparente</h2>
+          <p className="muted">
+            Elabora le foto già caricate. Le immagini originali restano salvate; il ritaglio viene eseguito nel browser.
+          </p>
+        </div>
+
+        <div className="avatar-background-actions">
+          <button
+            className="btn primary"
+            type="button"
+            onClick={processAllPhotoBackgrounds}
+            disabled={Boolean(backgroundJob) || photosToProcess === 0}
+          >
+            {backgroundJob?.action === 'remove'
+              ? 'Elaborazione…'
+              : `Rimuovi sfondo (${photosToProcess})`}
+          </button>
+          {photosToRestore > 0 && (
+            <button
+              className="btn"
+              type="button"
+              onClick={restoreAllPhotoBackgrounds}
+              disabled={Boolean(backgroundJob)}
+            >
+              {backgroundJob?.action === 'restore'
+                ? 'Ripristino…'
+                : `Ripristina originali (${photosToRestore})`}
+            </button>
+          )}
+        </div>
+
+        {backgroundJob && (
+          <div className="avatar-background-progress" role="status">
+            <span className="muted">
+              {backgroundJob.action === 'remove' ? 'Rimozione sfondo' : 'Ripristino originali'}
+              {' · '}{backgroundJob.done}/{backgroundJob.total}
+              {backgroundJob.name ? ` · ${backgroundJob.name}` : ''}
+            </span>
+            {backgroundJob.modelProgress?.total > 0 && (
+              <span className="muted small-text">
+                Download modello {Math.round((backgroundJob.modelProgress.current / backgroundJob.modelProgress.total) * 100)}%
+              </span>
+            )}
+            <progress value={backgroundJob.done} max={backgroundJob.total || 1} />
+          </div>
+        )}
+        {backgroundError && <p className="error">{backgroundError}</p>}
+        {backgroundMessage && <p className="success">{backgroundMessage}</p>}
+        {backgroundErrors.length > 0 && (
+          <ul className="avatar-background-errors">
+            {backgroundErrors.slice(0, 5).map((item, index) => (
+              <li key={`${item.name}-${index}`}>
+                {item.name}: {item.message}
+              </li>
+            ))}
+            {backgroundErrors.length > 5 && (
+              <li>Altri {backgroundErrors.length - 5} errori.</li>
+            )}
+          </ul>
+        )}
+      </section>
 
       {err && (
         <p className="error">

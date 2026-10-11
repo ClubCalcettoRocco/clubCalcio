@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
@@ -12,6 +13,7 @@ import {
 const VOTING_WINDOW_MS = 24 * 60 * 60 * 1000
 
 export default function Votazioni() {
+  const [searchParams] = useSearchParams()
   const {
     matches,
     playersById
@@ -19,7 +21,7 @@ export default function Votazioni() {
 
   const { me } = useAuth()
 
-  const [selectedMatchId, setSelectedMatchId] = useState('')
+  const [selectedMatchId, setSelectedMatchId] = useState(searchParams.get('match') || '')
   const [votes, setVotes] = useState({})
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)

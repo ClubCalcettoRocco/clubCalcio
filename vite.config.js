@@ -48,6 +48,10 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
+        workbox: {
+          globIgnores: ['**/*.wasm'],
+          importScripts: ['/push-sw.js']
+        },
         manifest: {
           name: 'Calcetto Club',
           short_name: 'Calcetto Club',
