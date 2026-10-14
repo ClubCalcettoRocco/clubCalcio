@@ -16,7 +16,7 @@ import {
 } from '../components/ui'
 
 import AvatarUpload from '../components/AvatarUpload'
-import PlayerCard from '../components/PlayerCard'
+import PlayerCard, { CARD_STYLE_OPTIONS } from '../components/PlayerCard'
 
 import {
   fmt1,
@@ -54,6 +54,7 @@ export default function PlayerProfile({ self = false }) {
   const [position, setPosition] = useState('')
   const [preferredFoot, setPreferredFoot] = useState('')
   const [playStyle, setPlayStyle] = useState('')
+  const [cardStyle, setCardStyle] = useState('auto')
 
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
@@ -78,6 +79,7 @@ export default function PlayerProfile({ self = false }) {
     setPosition(player.position || '')
     setPreferredFoot(player.preferred_foot || '')
     setPlayStyle(player.play_style || '')
+    setCardStyle(player.card_style || 'auto')
   }, [
     player?.id,
     player?.first_name,
@@ -88,7 +90,8 @@ export default function PlayerProfile({ self = false }) {
     player?.weight_kg,
     player?.position,
     player?.preferred_foot,
-    player?.play_style
+    player?.play_style,
+    player?.card_style
   ])
 
   /*
@@ -224,6 +227,16 @@ export default function PlayerProfile({ self = false }) {
       setErr(
         'Inserisci un peso valido tra 30 e 200 kg.'
       )
+      return
+    }
+
+    const { error: cardStyleError } = await supabase.rpc(
+      'set_my_card_style',
+      { p_card_style: cardStyle }
+    )
+
+    if (cardStyleError) {
+      setErr(`Impossibile salvare lo stile della carta. Esegui prima supabase/player-card-styles.sql in Supabase. ${cardStyleError.message}`)
       return
     }
 
@@ -541,6 +554,26 @@ export default function PlayerProfile({ self = false }) {
             </select>
           </label>
 
+          <fieldset className="card-style-picker">
+            <legend>Estetica della carta</legend>
+            <p className="muted">Cambia solo il design: OVR e statistiche restano invariati.</p>
+            <div className="card-style-options">
+              {CARD_STYLE_OPTIONS.map(option => (
+                <button
+                  type="button"
+                  key={option.id}
+                  className={`card-style-option${cardStyle === option.id ? ' selected' : ''}`}
+                  aria-pressed={cardStyle === option.id}
+                  onClick={() => setCardStyle(option.id)}
+                >
+                  <span className={`card-style-swatch card-style-swatch-${option.id}`} aria-hidden="true" />
+                  <span className="card-style-option-copy"><strong>{option.label}</strong><small>{option.note}</small></span>
+                  {cardStyle === option.id && <span className="card-style-check">✓</span>}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
           <AvatarUpload
             currentUrl={photo}
             onUploaded={setPhoto}
@@ -594,6 +627,7 @@ export default function PlayerProfile({ self = false }) {
           stats={stats}
           matches={history}
           playerId={playerId}
+          previewRarity={edit ? cardStyle : null}
         />
       </section>
 

@@ -1,6 +1,29 @@
 import { useMemo } from 'react'
 import { Avatar } from './ui'
 
+export const CARD_STYLE_OPTIONS = [
+  { id: 'auto', label: 'Classica', note: 'Stile automatico' },
+  { id: 'gold', label: 'Oro', note: 'Gold Rare' },
+  { id: 'silver', label: 'Argento', note: 'Silver Rare' },
+  { id: 'bronze', label: 'Bronzo', note: 'Bronze Rare' },
+  { id: 'totw', label: 'TOTW', note: 'Team of the Week' },
+  { id: 'toty', label: 'TOTY', note: 'Team of the Year' },
+  { id: 'tots', label: 'TOTS', note: 'Team of the Season' },
+  { id: 'hero', label: 'Hero', note: 'Ultimate Team Hero' },
+  { id: 'prime', label: 'Icona', note: 'Icon Moments' }
+]
+
+const CARD_STYLE_LABELS = {
+  bronze: 'BRONZO',
+  silver: 'ARGENTO',
+  gold: 'ORO',
+  totw: 'TOTW',
+  toty: 'TOTY',
+  tots: 'TOTS',
+  hero: 'HERO',
+  prime: 'ICONA'
+}
+
 
 /* =========================================================
    UTILITY
@@ -448,11 +471,14 @@ function getRarity(overall) {
 function getPreviewRarity(previewRarity) {
 
   const validRarities = [
+    'auto',
     'bronze',
     'silver',
     'gold',
     'totw',
     'toty',
+    'tots',
+    'hero',
     'prime'
   ]
 
@@ -552,8 +578,8 @@ export default function PlayerCard({
       .replace(/[\u0300-\u036f]/g, '')
       .trim()
       .toLocaleLowerCase('it')
-    const isIconaCard = normalizedName === 'paolo musicante'
-    const isTotyCard = normalizedName === 'leonardo ciaglia'
+    const isIconaPlayer = normalizedName === 'paolo musicante'
+    const isTotyPlayer = normalizedName === 'leonardo ciaglia'
 
     /* -----------------------------------------------------
        ATTRIBUTI
@@ -614,22 +640,23 @@ export default function PlayerCard({
       getPreviewRarity(
         previewRarity
       )
-
-
-    /*
-      Se previewRarity è valida,
-      usiamo quella.
-
-      Altrimenti utilizziamo
-      la rarità reale.
-    */
-
-    const overall = isIconaCard ? 99 : calculatedOverall
-    const rarity = isIconaCard
+    const storedRarity = getPreviewRarity(player?.card_style)
+    const defaultRarity = isIconaPlayer
       ? 'prime'
-      : isTotyCard
+      : isTotyPlayer
         ? 'toty'
-        : forcedRarity || automaticRarity
+        : automaticRarity
+    const selectedRarity = forcedRarity === 'auto'
+      ? defaultRarity
+      : forcedRarity || (storedRarity && storedRarity !== 'auto' ? storedRarity : defaultRarity)
+
+    // La scelta cambia esclusivamente la grafica della carta.
+    const overall = isIconaPlayer ? 99 : calculatedOverall
+    const rarity = selectedRarity
+    const isIconaCard = rarity === 'prime'
+    const isTotyCard = rarity === 'toty'
+    const isHeroCard = rarity === 'hero'
+    const isTotsCard = rarity === 'tots'
 
 
     /* -----------------------------------------------------
@@ -653,6 +680,10 @@ export default function PlayerCard({
 
       isTotyCard,
 
+      isHeroCard,
+
+      isTotsCard,
+
       rarity,
 
       automaticRarity,
@@ -674,6 +705,8 @@ export default function PlayerCard({
     attributes,
     overall,
     isIconaCard,
+    isHeroCard,
+    isTotsCard,
     rarity,
     automaticRarity,
     form
@@ -698,6 +731,12 @@ export default function PlayerCard({
             ? 'POR'
 
             : '---'
+
+  const cardSurname = player?.last_name || player?.first_name || ''
+  const surnameFontSize = Math.max(
+    15,
+    Math.min(28, Math.floor(285 / Math.max(cardSurname.length, 1)))
+  )
 
 
   /* =====================================================
@@ -769,13 +808,9 @@ export default function PlayerCard({
 
         )}
 
-        {data.isIconaCard && (
-          <div className="fifa-card-icona-label">ICONA</div>
-        )}
-
-        {data.isTotyCard && (
-          <div className="fifa-card-toty-label">TOTY</div>
-        )}
+        <div className={`fifa-card-style-label fifa-card-style-label-${rarity}`}>
+          {CARD_STYLE_LABELS[rarity] || 'CLASSICA'}
+        </div>
 
 
         {/* ===============================================
@@ -846,13 +881,8 @@ export default function PlayerCard({
         <div
           className="fifa-player-name"
         >
-
-          <span>
-            {player?.first_name || ''}
-          </span>
-
-          <strong>
-            {player?.last_name || ''}
+          <strong style={{ '--card-surname-font-size': `${surnameFontSize}px` }}>
+            {cardSurname}
           </strong>
 
         </div>

@@ -95,6 +95,8 @@ export default function MatchForm() {
   const [assistantMessage, setAssistantMessage] = useState('')
   const [assistantAskedPrompt, setAssistantAskedPrompt] = useState('')
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [playerSearch, setPlayerSearch] = useState('')
+  const [positionFilter, setPositionFilter] = useState('')
 
   useEffect(() => {
     setF(initial)
@@ -187,7 +189,7 @@ export default function MatchForm() {
   /*
    * OSPITE
    */
-  function addGuest() {
+  function addGuest(team) {
     const firstName = guestFirstName.trim()
     const lastName = guestLastName.trim()
 
@@ -206,6 +208,11 @@ export default function MatchForm() {
       return
     }
 
+    if (team && count(team) >= max) {
+      setErr(`La ${team === 'A' ? f.a : f.b} è già completa.`)
+      return
+    }
+
     setErr('')
 
     setF(v => ({
@@ -217,7 +224,7 @@ export default function MatchForm() {
           player_id: null,
           guest_first_name: firstName,
           guest_last_name: lastName,
-          team: null
+          team: team || null
         }
       ]
     }))
@@ -384,6 +391,25 @@ export default function MatchForm() {
     p => !p.team
   )
 
+  const availablePlayers = approvedPlayers.filter(player => {
+    const assigned = f.participants.some(p => p.player_id === player.id)
+    const matchesSearch = fullName(player).toLocaleLowerCase('it').includes(playerSearch.trim().toLocaleLowerCase('it'))
+    const matchesPosition = !positionFilter || player.position === positionFilter
+    return !assigned && matchesSearch && matchesPosition
+  })
+
+  const teamAverage = team => {
+    const ratings = f.participants
+      .filter(p => p.team === team && p.player_id)
+      .map(p => statsById[p.player_id]?.media_voto == null ? NaN : Number(statsById[p.player_id].media_voto))
+      .filter(Number.isFinite)
+    return ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : null
+  }
+
+  const averageA = teamAverage('A')
+  const averageB = teamAverage('B')
+  const balanceGap = averageA != null && averageB != null ? Math.abs(averageA - averageB) : null
+
   async function save() {
     if (!valid || hasUnassigned) return
 
@@ -468,6 +494,49 @@ export default function MatchForm() {
     }
 
     setBusy(false)
+  }
+
+  function renderTeam(team) {
+    const roster = f.participants.filter(p => p.team === team)
+    const name = team === 'A' ? f.a || 'Squadra A' : f.b || 'Squadra B'
+    const destination = team === 'A' ? 'B' : 'A'
+    const destinationName = destination === 'A' ? f.a || 'Squadra A' : f.b || 'Squadra B'
+
+    return (
+      <section className={`card team-builder-panel team-builder-${team.toLowerCase()}`} key={team}>
+        <header className="team-builder-heading">
+          <div className="team-builder-name">
+            <span className="team-builder-mark">{team}</span>
+            <div><span className="eyebrow">SQUADRA {team}</span><h3>{name}</h3></div>
+          </div>
+          <strong className={`team-capacity${roster.length === max ? ' is-full' : ''}`}>{roster.length}<span>/{max}</span></strong>
+        </header>
+        <div className="team-capacity-track"><span style={{ width: `${Math.min(100, (roster.length / max) * 100)}%` }} /></div>
+        <div className="team-roster-list">
+          {roster.map(participant => {
+            const player = participantPlayer(participant)
+            const stats = player ? statsById[player.id] : null
+            return (
+              <div className="team-roster-player" key={participant.key}>
+                {player ? <Avatar player={player} size={38} /> : <span className="avatar team-guest-avatar">👤</span>}
+                <span className="team-roster-copy">
+                  <strong>{participantName(participant)}</strong>
+                  <small>{player ? `${player.position || 'Ruolo da definire'}${stats?.media_voto != null ? ` · ⭐ ${Number(stats.media_voto).toFixed(1)}` : ''}` : 'Ospite'}</small>
+                </span>
+                <div className="team-roster-actions">
+                  <button type="button" className="team-move-btn" disabled={count(destination) >= max} title={count(destination) >= max ? `${destinationName} è completa` : `Sposta in ${destinationName}`} onClick={() => player ? toggleRegisteredPlayer(player.id, destination) : setGuestTeam(participant.key, destination)} aria-label={`Sposta ${participantName(participant)} in ${destinationName}`}>→ {destination}</button>
+                  <button type="button" className="team-remove-btn" onClick={() => player ? toggleRegisteredPlayer(player.id, team) : removeGuest(participant.key)} aria-label={`Rimuovi ${participantName(participant)} dalla squadra`} title="Rimuovi dalla squadra">×</button>
+                </div>
+              </div>
+            )
+          })}
+          {roster.length === 0 && <div className="team-empty-state">Aggiungi qui i giocatori</div>}
+        </div>
+        <div className="team-open-slots" aria-label={`${max - roster.length} posti liberi`}>
+          {Array.from({ length: max - roster.length }, (_, index) => <span key={index} title="Posto libero">＋</span>)}
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -587,467 +656,78 @@ export default function MatchForm() {
       </div>
 
 
-      {/* ========================= */}
-      {/* GIOCATORI REGISTRATI */}
-      {/* ========================= */}
-
-      <div className="section-head">
-        <h2>Giocatori</h2>
-
-        <span
-          className={
-            count('A') === max &&
-            count('B') === max
-              ? 'success'
-              : 'muted'
-          }
-        >
-          {count('A')}/{max} · {count('B')}/{max}
-        </span>
-      </div>
-
-      <div className="card">
-
-        {approvedPlayers.map(player => {
-          const team = selectedTeam(player.id)
-
-          return (
-            <div
-              key={player.id}
-              className="row player-pick"
-            >
-              <Avatar
-                player={player}
-                size={36}
-              />
-
-              <span className="grow">
-                {fullName(player)}
-              </span>
-
-              <button
-                type="button"
-                className={`chip ${
-                  team === 'A' ? 'on' : ''
-                }`}
-                disabled={
-                  count('A') >= max &&
-                  team !== 'A'
-                }
-                onClick={() =>
-                  toggleRegisteredPlayer(
-                    player.id,
-                    'A'
-                  )
-                }
-              >
-                A
-              </button>
-
-              <button
-                type="button"
-                className={`chip ${
-                  team === 'B' ? 'on' : ''
-                }`}
-                disabled={
-                  count('B') >= max &&
-                  team !== 'B'
-                }
-                onClick={() =>
-                  toggleRegisteredPlayer(
-                    player.id,
-                    'B'
-                  )
-                }
-              >
-                B
-              </button>
-            </div>
-          )
-        })}
-
-        {approvedPlayers.length === 0 && (
-          <p className="muted">
-            Nessun giocatore approvato.
-          </p>
-        )}
-
-      </div>
-
-
-      {/* ========================= */}
-      {/* OSPITI */}
-      {/* ========================= */}
-
-      <div className="section-head">
-        <h2>Giocatori non registrati</h2>
-      </div>
-
-      <div className="card stack">
-
-        <div className="two-col">
-
-          <input
-            className="input"
-            placeholder="Nome ospite"
-            value={guestFirstName}
-            onChange={e =>
-              setGuestFirstName(
-                e.target.value
-              )
-            }
-          />
-
-          <input
-            className="input"
-            placeholder="Cognome ospite"
-            value={guestLastName}
-            onChange={e =>
-              setGuestLastName(
-                e.target.value
-              )
-            }
-          />
-
+      <section className="roster-builder">
+        <div className="roster-builder-title">
+          <div>
+            <span className="eyebrow">ROSE DELLA PARTITA</span>
+            <h2>Componi le squadre</h2>
+            <p className="muted">Aggiungi i giocatori e spostali tra le due rose. I posti liberi sono sempre visibili.</p>
+          </div>
+          <span className={`roster-total${f.participants.length === max * 2 ? ' is-complete' : ''}`}>{f.participants.length}<small>/{max * 2}</small></span>
         </div>
 
-        <button
-          type="button"
-          className="btn"
-          onClick={addGuest}
-        >
-          + Aggiungi ospite
-        </button>
-
-        {f.participants
-          .filter(p => !p.player_id)
-          .map(guest => (
-
-            <div
-              key={guest.key}
-              className="row player-pick"
-            >
-
-              <div
-                className="avatar"
-                style={{
-                  width: 36,
-                  height: 36,
-                  display: 'grid',
-                  placeItems: 'center'
-                }}
-              >
-                👤
-              </div>
-
-              <span className="grow">
-                {participantName(guest)}
-
-                <small className="muted">
-                  {' '}· Ospite
-                </small>
-              </span>
-
-              <button
-                type="button"
-                className={`chip ${
-                  guest.team === 'A'
-                    ? 'on'
-                    : ''
-                }`}
-                disabled={
-                  count('A') >= max &&
-                  guest.team !== 'A'
-                }
-                onClick={() =>
-                  setGuestTeam(
-                    guest.key,
-                    'A'
-                  )
-                }
-              >
-                A
-              </button>
-
-              <button
-                type="button"
-                className={`chip ${
-                  guest.team === 'B'
-                    ? 'on'
-                    : ''
-                }`}
-                disabled={
-                  count('B') >= max &&
-                  guest.team !== 'B'
-                }
-                onClick={() =>
-                  setGuestTeam(
-                    guest.key,
-                    'B'
-                  )
-                }
-              >
-                B
-              </button>
-
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={() =>
-                  removeGuest(guest.key)
-                }
-              >
-                ×
-              </button>
-
-            </div>
-          ))}
-
-        {!f.participants.some(
-          p => !p.player_id
-        ) && (
-          <p className="muted">
-            Nessun ospite aggiunto.
-          </p>
-        )}
-
-      </div>
-
-
-      {/* ========================= */}
-      {/* RIEPILOGO SQUADRE */}
-      {/* ========================= */}
-
-      <div
-        style={{
-          marginTop: '40px'
-        }}
-      >
-
-        <div className="two-col">
-
-          {/* SQUADRA A */}
-
-          <div className="card">
-
-            <div className="section-head">
-
-              <h3>
-                {f.a || 'Squadra A'}
-              </h3>
-
-              <span className="muted">
-                {count('A')}/{max}
-              </span>
-
-            </div>
-
-            {f.participants
-              .filter(p => p.team === 'A')
-              .map(p => {
-
-                const player =
-                  participantPlayer(p)
-
-                return (
-                  <div
-                    key={p.key}
-                    className="row player-pick"
-                  >
-
-                    {player ? (
-                      <Avatar
-                        player={player}
-                        size={36}
-                      />
-                    ) : (
-                      <div
-                        className="avatar"
-                        style={{
-                          width: 36,
-                          height: 36,
-                          display: 'grid',
-                          placeItems: 'center'
-                        }}
-                      >
-                        👤
-                      </div>
-                    )}
-
-                    <span className="grow">
-                      {participantName(p)}
-
-                      {!p.player_id && (
-                        <small className="muted">
-                          {' '}· Ospite
-                        </small>
-                      )}
-                    </span>
-
-                    <button
-                      type="button"
-                      className="chip on"
-                      onClick={() =>
-                        p.player_id
-                          ? toggleRegisteredPlayer(
-                              p.player_id,
-                              'A'
-                            )
-                          : setGuestTeam(
-                              p.key,
-                              'A'
-                            )
-                      }
-                    >
-                      A
-                    </button>
-
-                    <button
-                      type="button"
-                      className="chip"
-                      disabled={
-                        count('B') >= max
-                      }
-                      onClick={() =>
-                        p.player_id
-                          ? toggleRegisteredPlayer(
-                              p.player_id,
-                              'B'
-                            )
-                          : setGuestTeam(
-                              p.key,
-                              'B'
-                            )
-                      }
-                    >
-                      B
-                    </button>
-
-                  </div>
-                )
-              })}
-
-            {count('A') === 0 && (
-              <p className="muted">
-                Nessun giocatore.
-              </p>
-            )}
-
-          </div>
-
-
-          {/* SQUADRA B */}
-
-          <div className="card">
-
-            <div className="section-head">
-
-              <h3>
-                {f.b || 'Squadra B'}
-              </h3>
-
-              <span className="muted">
-                {count('B')}/{max}
-              </span>
-
-            </div>
-
-            {f.participants
-              .filter(p => p.team === 'B')
-              .map(p => {
-
-                const player =
-                  participantPlayer(p)
-
-                return (
-                  <div
-                    key={p.key}
-                    className="row player-pick"
-                  >
-
-                    {player ? (
-                      <Avatar
-                        player={player}
-                        size={36}
-                      />
-                    ) : (
-                      <div
-                        className="avatar"
-                        style={{
-                          width: 36,
-                          height: 36,
-                          display: 'grid',
-                          placeItems: 'center'
-                        }}
-                      >
-                        👤
-                      </div>
-                    )}
-
-                    <span className="grow">
-                      {participantName(p)}
-
-                      {!p.player_id && (
-                        <small className="muted">
-                          {' '}· Ospite
-                        </small>
-                      )}
-                    </span>
-
-                    <button
-                      type="button"
-                      className="chip"
-                      disabled={
-                        count('A') >= max
-                      }
-                      onClick={() =>
-                        p.player_id
-                          ? toggleRegisteredPlayer(
-                              p.player_id,
-                              'A'
-                            )
-                          : setGuestTeam(
-                              p.key,
-                              'A'
-                            )
-                      }
-                    >
-                      A
-                    </button>
-
-                    <button
-                      type="button"
-                      className="chip on"
-                      onClick={() =>
-                        p.player_id
-                          ? toggleRegisteredPlayer(
-                              p.player_id,
-                              'B'
-                            )
-                          : setGuestTeam(
-                              p.key,
-                              'B'
-                            )
-                      }
-                    >
-                      B
-                    </button>
-
-                  </div>
-                )
-              })}
-
-            {count('B') === 0 && (
-              <p className="muted">
-                Nessun giocatore.
-              </p>
-            )}
-
-          </div>
-
+        <div className="team-builder-grid">
+          {renderTeam('A')}
+          {renderTeam('B')}
         </div>
 
-      </div>
+        <div className={`team-balance-summary${balanceGap != null && balanceGap > 1 ? ' needs-balance' : ''}`}>
+          <span className="balance-icon">⚖</span>
+          <div className="balance-copy">
+            <strong>{balanceGap == null ? 'Confronto delle squadre' : balanceGap <= 0.5 ? 'Squadre ben bilanciate' : `Differenza media ${balanceGap.toFixed(1)}`}</strong>
+            <small>{averageA == null && averageB == null ? 'Aggiungi giocatori con voti disponibili per confrontare il rendimento.' : `Media ${f.a || 'Squadra A'}: ${averageA == null ? '—' : averageA.toFixed(1)} · ${f.b || 'Squadra B'}: ${averageB == null ? '—' : averageB.toFixed(1)}`}</small>
+          </div>
+          {balanceGap != null && <span className="balance-delta">{balanceGap <= 0.5 ? 'OK' : 'DA RIVEDERE'}</span>}
+        </div>
+
+        <section className="available-players-section">
+          <div className="available-players-heading">
+            <div><h3>Giocatori disponibili</h3><span className="muted">{availablePlayers.length} da assegnare</span></div>
+            <div className="player-search-filters">
+              <input id="player-search" className="input" value={playerSearch} onChange={event => setPlayerSearch(event.target.value)} placeholder="Cerca nome…" aria-label="Cerca giocatore" />
+              <select className="input" value={positionFilter} onChange={event => setPositionFilter(event.target.value)} aria-label="Filtra per ruolo">
+                <option value="">Tutti i ruoli</option>
+                {['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'].map(position => <option key={position} value={position}>{position}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="available-player-list">
+            {availablePlayers.map(player => {
+              const stats = statsById[player.id]
+              return (
+                <article className="available-player-card" key={player.id}>
+                  <Avatar player={player} size={42} />
+                  <span className="available-player-info">
+                    <strong>{fullName(player)}</strong>
+                    <small>{player.position || 'Ruolo da definire'}{stats?.media_voto != null ? ` · ⭐ ${Number(stats.media_voto).toFixed(1)}` : ''}{stats?.presenze ? ` · ${stats.presenze} pres.` : ''}</small>
+                  </span>
+                  <div className="available-player-actions">
+                    <button type="button" className="chip team-chip-a" disabled={count('A') >= max} onClick={() => toggleRegisteredPlayer(player.id, 'A')} aria-label={`Aggiungi ${fullName(player)} a ${f.a || 'Squadra A'}`}>+ A</button>
+                    <button type="button" className="chip team-chip-b" disabled={count('B') >= max} onClick={() => toggleRegisteredPlayer(player.id, 'B')} aria-label={`Aggiungi ${fullName(player)} a ${f.b || 'Squadra B'}`}>+ B</button>
+                  </div>
+                </article>
+              )
+            })}
+            {availablePlayers.length === 0 && <p className="available-empty">{approvedPlayers.length === f.participants.filter(p => p.player_id).length ? 'Tutti i giocatori approvati sono già in una rosa.' : 'Nessun giocatore trovato con questi filtri.'}</p>}
+          </div>
+        </section>
+
+        <section className="guest-builder">
+          <div className="guest-builder-heading">
+            <div><h3>Aggiungi un ospite</h3><p className="muted">Scegli subito la squadra in cui inserirlo.</p></div>
+            <span className="guest-builder-icon">＋</span>
+          </div>
+          <div className="guest-builder-form">
+            <input className="input" placeholder="Nome" value={guestFirstName} onChange={event => setGuestFirstName(event.target.value)} aria-label="Nome ospite" />
+            <input className="input" placeholder="Cognome" value={guestLastName} onChange={event => setGuestLastName(event.target.value)} aria-label="Cognome ospite" />
+            <button type="button" className="btn guest-add-a" disabled={count('A') >= max || f.participants.length >= max * 2} onClick={() => addGuest('A')}>+ {f.a || 'Squadra A'}</button>
+            <button type="button" className="btn guest-add-b" disabled={count('B') >= max || f.participants.length >= max * 2} onClick={() => addGuest('B')}>+ {f.b || 'Squadra B'}</button>
+          </div>
+          {f.participants.some(participant => !participant.player_id) && <p className="guest-list-label">Ospiti già inseriti</p>}
+          {f.participants.filter(participant => !participant.player_id).map(guest => <div className="guest-roster-chip" key={guest.key}><span>👤 {participantName(guest)} <small>· Squadra {guest.team || 'da assegnare'}</small></span><button type="button" onClick={() => removeGuest(guest.key)} aria-label={`Rimuovi ${participantName(guest)}`}>×</button></div>)}
+        </section>
+      </section>
 
 
       {hasUnassigned && (

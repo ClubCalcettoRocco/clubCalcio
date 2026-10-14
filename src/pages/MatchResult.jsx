@@ -4,6 +4,13 @@ import { useData } from '../lib/data'
 import { supabase } from '../lib/supabase'
 import { fullName } from '../lib/util'
 
+const oppositeTeam = team => team === 'A' ? 'B' : 'A'
+
+const scorerTeamForGoal = goal =>
+  goal.own_goal
+    ? oppositeTeam(goal.credited_team)
+    : goal.credited_team
+
 export default function MatchResult() {
   const { id } = useParams()
   const nav = useNavigate()
@@ -173,6 +180,19 @@ export default function MatchResult() {
           value
         ) {
           updated.assist_id = ''
+        }
+
+        if (key === 'credited_team' || key === 'own_goal') {
+          const scorerTeam = scorerTeamForGoal(updated)
+          const scorer = registeredRoster.find(x => x.player_id === updated.scorer_id)
+          const guestScorer = guestRoster.find(x => x.id === updated.guest_scorer_match_player_id)
+          const assist = registeredRoster.find(x => x.player_id === updated.assist_id)
+          const guestAssist = guestRoster.find(x => x.id === updated.guest_assist_match_player_id)
+
+          if (scorer && scorer.team !== scorerTeam) updated.scorer_id = ''
+          if (guestScorer && guestScorer.team !== scorerTeam) updated.guest_scorer_match_player_id = ''
+          if (assist && assist.team !== scorerTeam) updated.assist_id = ''
+          if (guestAssist && guestAssist.team !== scorerTeam) updated.guest_assist_match_player_id = ''
         }
 
         return updated
@@ -413,188 +433,128 @@ export default function MatchResult() {
 
       <div className="stack">
         {goals.length ? (
-          goals.map((g, i) => (
-            <div
-              className="card goal-editor"
-              key={i}
-            >
-              <div className="goal-top">
-                <b>
-                  Gol {i + 1}
-                </b>
+          goals.map((g, i) => {
+            const scorerTeam = scorerTeamForGoal(g)
+            const scorerTeamName = scorerTeam === 'A' ? m.team_a_name : m.team_b_name
+            const registeredScorers = registeredRoster.filter(x => x.team === scorerTeam)
+            const guestScorers = guestRoster.filter(x => x.team === scorerTeam)
 
-                <button
-                  className="icon-btn"
-                  onClick={() =>
-                    removeGoal(i)
-                  }
-                  aria-label="Rimuovi"
-                >
-                  ×
-                </button>
+            return (
+              <div className="card goal-editor" key={i}>
+                <div className="goal-top">
+                  <b>⚽ Gol {i + 1}</b>
+                  <button
+                    className="icon-btn goal-remove-btn"
+                    onClick={() => removeGoal(i)}
+                    aria-label={`Rimuovi gol ${i + 1}`}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="goal-grid">
+                  <label className="goal-field goal-team-field">
+                    <span>Gol attribuito a</span>
+                    <select
+                      className="input"
+                      value={g.credited_team}
+                      onChange={e => updateGoal(i, 'credited_team', e.target.value)}
+                    >
+                      <option value="A">{m.team_a_name}</option>
+                      <option value="B">{m.team_b_name}</option>
+                    </select>
+                  </label>
+
+                  <label className="goal-field">
+                    <span>Marcatore · {scorerTeamName}</span>
+                    <select
+                      className="input"
+                      value={g.scorer_id}
+                      onChange={e => updateGoal(i, 'scorer_id', e.target.value)}
+                    >
+                      <option value="">
+                        {registeredScorers.length ? 'Scegli giocatore' : 'Nessun giocatore registrato'}
+                      </option>
+                      {registeredScorers.map(x => (
+                        <option key={x.player_id} value={x.player_id}>{fullName(x.player)}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="goal-field">
+                    <span>Marcatore ospite · {scorerTeamName}</span>
+                    <select
+                      className="input"
+                      value={g.guest_scorer_match_player_id}
+                      onChange={e => updateGoal(i, 'guest_scorer_match_player_id', e.target.value)}
+                    >
+                      <option value="">
+                        {guestScorers.length ? 'Scegli ospite' : 'Nessun ospite in questa squadra'}
+                      </option>
+                      {guestScorers.map(x => (
+                        <option key={x.id} value={x.id}>
+                          {x.guest_first_name} {x.guest_last_name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="goal-field">
+                    <span>Assist · {scorerTeamName}</span>
+                    <select
+                      className="input"
+                      value={g.assist_id}
+                      onChange={e => updateGoal(i, 'assist_id', e.target.value)}
+                    >
+                      <option value="">Nessun assist / scegli giocatore</option>
+                      {registeredScorers.map(x => (
+                        <option key={x.player_id} value={x.player_id}>{fullName(x.player)}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="goal-field">
+                    <span>Assist ospite · {scorerTeamName}</span>
+                    <select
+                      className="input"
+                      value={g.guest_assist_match_player_id}
+                      onChange={e => updateGoal(i, 'guest_assist_match_player_id', e.target.value)}
+                    >
+                      <option value="">Nessun assist / scegli ospite</option>
+                      {guestScorers.map(x => (
+                        <option key={x.id} value={x.id}>
+                          {x.guest_first_name} {x.guest_last_name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="goal-field goal-minute-field">
+                    <span>Minuto (facoltativo)</span>
+                    <input
+                      className="input"
+                      type="number"
+                      min="0"
+                      max="200"
+                      inputMode="numeric"
+                      placeholder="Es. 12"
+                      value={g.minute}
+                      onChange={e => updateGoal(i, 'minute', e.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <label className="check goal-own-goal">
+                  <input
+                    type="checkbox"
+                    checked={g.own_goal}
+                    onChange={e => updateGoal(i, 'own_goal', e.target.checked)}
+                  />
+                  Autogol · il marcatore appartiene alla squadra avversaria
+                </label>
               </div>
-
-              <div className="goal-grid">
-                <select
-                  className="input"
-                  value={g.scorer_id}
-                  onChange={e =>
-                    updateGoal(
-                      i,
-                      'scorer_id',
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="">
-                    Marcatore registrato
-                  </option>
-
-                  {registeredRoster.map(x => (
-                    <option
-                      key={x.player_id}
-                      value={x.player_id}
-                    >
-                      {fullName(x.player)}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="input"
-                  value={
-                    g.guest_scorer_match_player_id
-                  }
-                  onChange={e =>
-                    updateGoal(
-                      i,
-                      'guest_scorer_match_player_id',
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="">
-                    Marcatore ospite
-                  </option>
-
-                  {guestRoster.map(x => (
-                    <option
-                      key={x.id}
-                      value={x.id}
-                    >
-                      {x.guest_first_name}{' '}
-                      {x.guest_last_name}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="input"
-                  value={g.credited_team}
-                  onChange={e =>
-                    updateGoal(
-                      i,
-                      'credited_team',
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="A">
-                    Gol per {m.team_a_name}
-                  </option>
-
-                  <option value="B">
-                    Gol per {m.team_b_name}
-                  </option>
-                </select>
-
-                <select
-                  className="input"
-                  value={g.assist_id}
-                  onChange={e =>
-                    updateGoal(
-                      i,
-                      'assist_id',
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="">
-                    Assist registrato
-                  </option>
-
-                  {registeredRoster.map(x => (
-                    <option
-                      key={x.player_id}
-                      value={x.player_id}
-                    >
-                      {fullName(x.player)}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="input"
-                  value={
-                    g.guest_assist_match_player_id
-                  }
-                  onChange={e =>
-                    updateGoal(
-                      i,
-                      'guest_assist_match_player_id',
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="">
-                    Assist ospite
-                  </option>
-
-                  {guestRoster.map(x => (
-                    <option
-                      key={x.id}
-                      value={x.id}
-                    >
-                      {x.guest_first_name}{' '}
-                      {x.guest_last_name}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  className="input"
-                  type="number"
-                  min="0"
-                  max="200"
-                  placeholder="Minuto"
-                  value={g.minute}
-                  onChange={e =>
-                    updateGoal(
-                      i,
-                      'minute',
-                      e.target.value
-                    )
-                  }
-                />
-              </div>
-
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={g.own_goal}
-                  onChange={e =>
-                    updateGoal(
-                      i,
-                      'own_goal',
-                      e.target.checked
-                    )
-                  }
-                />
-
-                Autogol
-              </label>
-            </div>
-          ))
+            )
+          })
         ) : (
           <div className="card empty">
             <p className="muted">

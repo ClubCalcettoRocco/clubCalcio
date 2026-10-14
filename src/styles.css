@@ -6093,6 +6093,249 @@ a:focus-visible,
   .pitch-player { animation: none; }
 }
 
+/* Match roster builder: live team panels, free players, and guest assignment. */
+.roster-builder {
+  display: grid;
+  gap: 16px;
+  margin: 26px 0 20px;
+}
+
+.roster-builder-title,
+.available-players-heading,
+.guest-builder-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.roster-builder-title h2,
+.available-players-heading h3,
+.guest-builder-heading h3 {
+  margin: 3px 0 5px;
+}
+
+.roster-builder-title p,
+.guest-builder-heading p {
+  margin: 0;
+}
+
+.roster-total {
+  display: grid;
+  place-items: center;
+  min-width: 60px;
+  min-height: 60px;
+  padding: 7px;
+  border: 1px solid rgba(197,173,114,.26);
+  border-radius: 18px;
+  background: rgba(197,173,114,.08);
+  color: var(--accent-2);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.roster-total small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.roster-total.is-complete { border-color: rgba(104,215,170,.4); color: #68d7aa; }
+
+.team-builder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px;
+}
+
+.team-builder-panel {
+  min-width: 0;
+  padding: 16px;
+  border-color: rgba(255,255,255,.1);
+  background: linear-gradient(155deg, rgba(24,43,59,.98), rgba(14,27,40,.98));
+}
+
+.team-builder-a { border-top: 2px solid #61cfa2; }
+.team-builder-b { border-top: 2px solid #81a9ff; }
+
+.team-builder-heading,
+.team-builder-name,
+.team-roster-player,
+.team-roster-actions,
+.team-open-slots,
+.available-player-card,
+.available-player-actions,
+.guest-roster-chip {
+  display: flex;
+  align-items: center;
+}
+
+.team-builder-heading { justify-content: space-between; gap: 10px; }
+.team-builder-name { min-width: 0; gap: 10px; }
+.team-builder-name > div { min-width: 0; }
+.team-builder-name h3 { overflow: hidden; margin: 2px 0 0; text-overflow: ellipsis; white-space: nowrap; }
+
+.team-builder-mark {
+  display: grid;
+  flex: 0 0 38px;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(97,207,162,.14);
+  color: #76e0b4;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.team-builder-b .team-builder-mark { background: rgba(129,169,255,.14); color: #a9c4ff; }
+
+.team-capacity {
+  flex: 0 0 auto;
+  color: var(--text);
+  font-size: 20px;
+}
+
+.team-capacity span { color: var(--muted); font-size: 13px; }
+.team-capacity.is-full { color: #68d7aa; }
+
+.team-capacity-track {
+  height: 5px;
+  margin: 13px 0 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255,255,255,.08);
+}
+
+.team-capacity-track span { display: block; height: 100%; border-radius: inherit; background: #61cfa2; transition: width 260ms ease; }
+.team-builder-b .team-capacity-track span { background: #81a9ff; }
+
+.team-roster-list { display: grid; gap: 6px; }
+
+.team-roster-player {
+  min-width: 0;
+  gap: 9px;
+  min-height: 54px;
+  padding: 7px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+  animation: roster-player-in 220ms ease both;
+}
+
+@keyframes roster-player-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.team-guest-avatar { display: grid; flex: 0 0 38px; place-items: center; width: 38px; height: 38px; background: rgba(255,255,255,.1); }
+.team-roster-copy { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.team-roster-copy strong,.team-roster-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-roster-copy strong { font-size: 12px; }
+.team-roster-copy small { color: var(--muted); font-size: 10px; }
+.team-roster-actions { flex: 0 0 auto; gap: 4px; }
+.team-move-btn,.team-remove-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; border: 1px solid var(--border); border-radius: 9px; background: rgba(255,255,255,.04); color: var(--text); font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
+.team-move-btn { padding: 0 8px; }
+.team-remove-btn { width: 34px; color: var(--muted); font-size: 17px; }
+.team-move-btn:disabled { opacity: .38; cursor: not-allowed; }
+.team-remove-btn:hover { border-color: rgba(255,125,125,.4); color: #ff9c9c; }
+.team-empty-state { padding: 17px 8px; color: var(--muted); font-size: 12px; text-align: center; }
+
+.team-open-slots { flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.team-open-slots span { display: grid; place-items: center; width: 25px; height: 25px; border: 1px dashed rgba(255,255,255,.18); border-radius: 8px; color: var(--muted); font-size: 13px; }
+
+.team-balance-summary {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 15px;
+  border: 1px solid rgba(104,215,170,.18);
+  border-radius: 15px;
+  background: rgba(104,215,170,.055);
+}
+
+.team-balance-summary.needs-balance { border-color: rgba(255,189,105,.28); background: rgba(255,189,105,.055); }
+.balance-icon { font-size: 20px; }
+.balance-copy { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.balance-copy strong { font-size: 12px; }
+.balance-copy small { color: var(--muted); font-size: 10px; line-height: 1.4; }
+.balance-delta { color: #68d7aa; font-size: 9px; font-weight: 900; letter-spacing: .06em; }
+.needs-balance .balance-delta { color: #ffbd69; }
+
+.available-players-section,.guest-builder { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 17px; background: rgba(255,255,255,.025); }
+.available-players-heading { align-items: flex-start; }
+.available-players-heading h3 { margin: 0 0 4px; }
+.available-players-heading .muted { font-size: 11px; }
+.player-search-filters { display: flex; gap: 7px; width: min(100%, 430px); }
+.player-search-filters .input { min-width: 0; min-height: 42px; padding: 9px 11px; font-size: 12px; }
+.player-search-filters input { flex: 1; }
+.player-search-filters select { width: 150px; }
+.available-player-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.available-player-card { min-width: 0; gap: 9px; padding: 9px; border: 1px solid rgba(255,255,255,.075); border-radius: 13px; background: rgba(14,27,40,.6); }
+.available-player-info { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.available-player-info strong,.available-player-info small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.available-player-info strong { font-size: 12px; }
+.available-player-info small { color: var(--muted); font-size: 10px; }
+.available-player-actions { flex: 0 0 auto; gap: 4px; }
+.available-player-actions .chip { min-width: 42px; min-height: 38px; padding: 0 7px; font-size: 11px; font-weight: 850; }
+.team-chip-a { border-color: rgba(97,207,162,.25); }
+.team-chip-b { border-color: rgba(129,169,255,.25); }
+.available-player-actions .chip:disabled,.guest-builder-form .btn:disabled { opacity: .38; cursor: not-allowed; }
+.available-empty { grid-column: 1/-1; margin: 0; padding: 18px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); font-size: 12px; text-align: center; }
+
+.guest-builder { background: linear-gradient(135deg, rgba(255,255,255,.035), rgba(255,255,255,.015)); }
+.guest-builder-heading { justify-content: flex-start; }
+.guest-builder-icon { display: grid; place-items: center; width: 37px; height: 37px; margin-left: auto; border-radius: 12px; background: rgba(197,173,114,.12); color: var(--accent-2); font-size: 20px; }
+.guest-builder-form { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; }
+.guest-builder-form .input { min-width: 0; min-height: 44px; padding: 10px 12px; font-size: 12px; }
+.guest-builder-form .btn { min-height: 44px; padding: 9px 12px; font-size: 11px; white-space: nowrap; }
+.guest-add-a { border-color: rgba(97,207,162,.3); }
+.guest-add-b { border-color: rgba(129,169,255,.3); }
+.guest-list-label { margin: 3px 0 -5px; color: var(--muted); font-size: 11px; font-weight: 750; }
+.guest-roster-chip { justify-content: space-between; gap: 9px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 11px; }
+.guest-roster-chip small { color: var(--muted); }
+.guest-roster-chip button { width: 28px; height: 28px; border: 0; border-radius: 7px; background: rgba(255,255,255,.06); color: var(--muted); font-size: 17px; cursor: pointer; }
+
+@media (max-width: 740px) {
+  .available-players-heading { flex-direction: column; }
+  .player-search-filters { width: 100%; }
+  .available-player-list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .roster-builder { gap: 12px; margin-top: 20px; }
+  .roster-builder-title { align-items: flex-start; }
+  .roster-builder-title p { max-width: 270px; font-size: 12px; line-height: 1.45; }
+  .roster-total { min-width: 51px; min-height: 51px; border-radius: 15px; font-size: 19px; }
+  .team-builder-grid { gap: 8px; }
+  .team-builder-panel { padding: 10px 8px; }
+  .team-builder-mark { flex-basis: 31px; width: 31px; height: 31px; border-radius: 10px; font-size: 14px; }
+  .team-builder-name { gap: 6px; }
+  .team-builder-name .eyebrow { font-size: 8px; }
+  .team-builder-name h3 { font-size: 13px; }
+  .team-capacity { font-size: 17px; }
+  .team-roster-player { flex-wrap: wrap; gap: 6px; padding: 6px; }
+  .team-roster-player > .avatar,.team-guest-avatar { flex-basis: 30px; width: 30px; height: 30px; }
+  .team-roster-copy { flex-basis: calc(100% - 40px); }
+  .team-roster-copy strong { font-size: 10px; }
+  .team-roster-copy small { font-size: 9px; }
+  .team-roster-actions { width: 100%; justify-content: flex-end; }
+  .team-move-btn,.team-remove-btn { min-height: 30px; }
+  .team-remove-btn { width: 30px; }
+  .team-open-slots { gap: 3px; }
+  .team-open-slots span { width: 20px; height: 20px; font-size: 11px; }
+  .team-balance-summary { gap: 8px; padding: 11px; }
+  .balance-delta { font-size: 8px; }
+  .available-players-section,.guest-builder { padding: 12px; }
+  .available-player-card { gap: 7px; padding: 8px; }
+  .available-player-card > .avatar { flex-basis: 34px; width: 34px; height: 34px; }
+  .available-player-actions { gap: 3px; }
+  .available-player-actions .chip { min-width: 37px; min-height: 36px; padding: 0 5px; font-size: 10px; }
+  .guest-builder-form { grid-template-columns: 1fr 1fr; }
+  .guest-builder-form .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-roster-player,.team-capacity-track span { animation: none; transition: none; }
+}
+
 /* Two unmistakably separate teams, one on each half of the pitch. */
 .football-pitch {
   display: grid;
@@ -6248,4 +6491,358 @@ a:focus-visible,
   .pitch-center-circle { width: 48px; }
   .pitch-box { width: 10%; height: 38%; }
   .pitch-six-yard { width: 4%; height: 20%; }
+}
+
+/* Hero and TOTS card looks can be selected without changing player ratings. */
+.fifa-card-hero {
+  --card-light: #ffbd7a;
+  --card-mid: #a43756;
+  --card-dark: #291b47;
+  --card-accent: #ffd184;
+  --card-text: #fff0d4;
+  box-shadow: 0 32px 75px rgba(0,0,0,.48), 0 0 42px rgba(192,76,126,.22);
+}
+
+.fifa-card-hero .fifa-card-inner {
+  background: radial-gradient(ellipse at 76% 18%, rgba(255,205,123,.26), transparent 34%), linear-gradient(145deg, #652f58 0%, #38234f 48%, #1a203a 100%);
+}
+
+.fifa-card-hero .fifa-card-inner::before { border-color: rgba(255,205,132,.78); box-shadow: inset 0 0 26px rgba(247,174,111,.1); }
+.fifa-card-hero .fifa-card-inner::after { border-color: rgba(255,224,172,.3); }
+.fifa-card-hero .fifa-card-shine { background: radial-gradient(ellipse 48% 30% at 72% 13%, rgba(255,224,172,.42), transparent 72%); opacity: .7; }
+.fifa-card-hero .fifa-card-glow { background: radial-gradient(ellipse, rgba(204,82,130,.28), transparent 68%); filter: blur(28px); }
+.fifa-card-hero .fifa-overall,.fifa-card-hero .fifa-position,.fifa-card-hero .fifa-player-name,.fifa-card-hero .fifa-stat { color: #ffe3b6; }
+
+.fifa-card-tots {
+  --card-light: #c5ffe0;
+  --card-mid: #37a984;
+  --card-dark: #123e45;
+  --card-accent: #b8f7d6;
+  --card-text: #e8fff2;
+  box-shadow: 0 32px 75px rgba(0,0,0,.48), 0 0 42px rgba(77,222,165,.2);
+}
+
+.fifa-card-tots .fifa-card-inner {
+  background: radial-gradient(ellipse at 20% 12%, rgba(198,255,226,.27), transparent 32%), linear-gradient(145deg, #236f63 0%, #174e55 46%, #142c45 100%);
+}
+
+.fifa-card-tots .fifa-card-inner::before { border-color: rgba(192,255,219,.75); box-shadow: inset 0 0 26px rgba(101,236,173,.1); }
+.fifa-card-tots .fifa-card-inner::after { border-color: rgba(205,255,225,.3); }
+.fifa-card-tots .fifa-card-shine { background: radial-gradient(ellipse 48% 30% at 72% 13%, rgba(196,255,222,.45), transparent 72%); opacity: .7; }
+.fifa-card-tots .fifa-card-glow { background: radial-gradient(ellipse, rgba(64,223,162,.27), transparent 68%); filter: blur(28px); }
+.fifa-card-tots .fifa-overall,.fifa-card-tots .fifa-position,.fifa-card-tots .fifa-player-name,.fifa-card-tots .fifa-stat { color: #d4ffe5; }
+
+/* Special editions inspired by collectible football cards: shield silhouette,
+   layered foil and stronger color contrast. These rules affect presentation only. */
+.fifa-card-totw .fifa-card-inner,
+.fifa-card-toty .fifa-card-inner,
+.fifa-card-prime .fifa-card-inner,
+.fifa-card-hero .fifa-card-inner,
+.fifa-card-tots .fifa-card-inner {
+  clip-path: polygon(50% 0%, 58% 3.2%, 67% 1.7%, 76% 5.5%, 100% 11%, 97.5% 88%, 89% 94%, 50% 100%, 11% 94%, 2.5% 88%, 0% 11%, 24% 5.5%, 33% 1.7%, 42% 3.2%);
+  border-radius: 0;
+}
+
+.fifa-card-totw .fifa-card-inner {
+  background:
+    radial-gradient(ellipse at 72% 32%, rgba(95, 207, 255, .55), transparent 34%),
+    radial-gradient(ellipse at 23% 64%, rgba(155, 73, 255, .48), transparent 42%),
+    repeating-linear-gradient(132deg, transparent 0 18px, rgba(255,255,255,.045) 19px 20px, transparent 21px 34px),
+    linear-gradient(148deg, #132b66 0%, #132049 48%, #260c4a 100%);
+}
+
+.fifa-card-toty .fifa-card-inner {
+  background:
+    radial-gradient(ellipse at 72% 25%, rgba(74, 189, 255, .62), transparent 30%),
+    radial-gradient(ellipse at 28% 59%, rgba(26, 93, 217, .54), transparent 46%),
+    repeating-conic-gradient(from 22deg at 73% 29%, rgba(255,255,255,.1) 0 4deg, transparent 5deg 17deg),
+    linear-gradient(145deg, #1a557e 0%, #092548 50%, #09122f 100%);
+}
+
+.fifa-card-prime .fifa-card-inner {
+  background:
+    radial-gradient(ellipse at 67% 31%, rgba(60, 141, 255, .32), transparent 22%),
+    radial-gradient(ellipse at 69% 31%, transparent 17%, rgba(209, 169, 91, .65) 18% 19%, transparent 20% 26%, rgba(230, 204, 151, .35) 27% 28%, transparent 29%),
+    repeating-linear-gradient(138deg, transparent 0 26px, rgba(183, 139, 59, .12) 27px 29px, transparent 30px 46px),
+    linear-gradient(145deg, #fffef7 0%, #ece5d4 55%, #c8b58e 100%);
+}
+
+.fifa-card-prime .fifa-overall,.fifa-card-prime .fifa-position,.fifa-card-prime .fifa-player-name,.fifa-card-prime .fifa-stat { color: #27304a; text-shadow: 0 1px rgba(255,255,255,.55); }
+
+/* Artwork supplied for the blue/silver TOTY card. Player data remains HTML on top. */
+.fifa-card-toty .fifa-card-inner {
+  background:
+    linear-gradient(180deg, rgba(5, 16, 43, .12), rgba(4, 13, 36, .03) 48%, rgba(3, 10, 31, .35)),
+    url('/cards/card-toty-blue.jpg') center 50% / cover no-repeat;
+}
+
+.fifa-card-toty .fifa-card-inner::before {
+  border-color: rgba(177, 225, 255, .86);
+  box-shadow: inset 0 0 24px rgba(56, 174, 255, .18), 0 0 10px rgba(79, 180, 255, .2);
+}
+
+.fifa-card-toty .fifa-card-inner::after { border-color: rgba(186, 218, 255, .48); }
+.fifa-card-toty .fifa-card-rating,
+.fifa-card-toty .fifa-player-name,
+.fifa-card-toty .fifa-card-stats { text-shadow: 0 2px 8px rgba(0, 8, 28, .8); }
+
+/* Icona artwork: place the live player data into the clear panels of the image. */
+.fifa-card-prime .fifa-card-inner {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 48%, rgba(167,126,54,.06)),
+    url('/cards/card-icona-marble.png') center 50% / cover no-repeat;
+}
+
+.fifa-card-prime .fifa-card-rating {
+  top: 10.5%;
+  left: 12%;
+  width: 20%;
+  height: 15%;
+  justify-content: center;
+}
+
+.fifa-card-prime .fifa-overall { font-size: 46px; letter-spacing: -3px; }
+.fifa-card-prime .fifa-position { margin-top: 5px; font-size: 12px; }
+.fifa-card-prime .fifa-form { display: none; }
+.fifa-card-prime .fifa-player-name { top: 66.5%; }
+
+.fifa-card-totw .fifa-card-inner::before,.fifa-card-toty .fifa-card-inner::before,.fifa-card-prime .fifa-card-inner::before,.fifa-card-hero .fifa-card-inner::before,.fifa-card-tots .fifa-card-inner::before { inset: 8px; clip-path: inherit; border: 2px solid rgba(255,255,255,.7); border-radius: 0; }
+.fifa-card-toty .fifa-card-inner::before { border-color: rgba(177, 225, 255, .86); box-shadow: inset 0 0 24px rgba(56,174,255,.18), 0 0 10px rgba(79,180,255,.2); }
+.fifa-card-totw .fifa-card-inner::after,.fifa-card-toty .fifa-card-inner::after,.fifa-card-prime .fifa-card-inner::after,.fifa-card-hero .fifa-card-inner::after,.fifa-card-tots .fifa-card-inner::after { inset: 15px; clip-path: inherit; border-color: rgba(239,205,123,.62); border-radius: 0; }
+.fifa-card-totw .fifa-card-shine,.fifa-card-toty .fifa-card-shine,.fifa-card-prime .fifa-card-shine,.fifa-card-hero .fifa-card-shine,.fifa-card-tots .fifa-card-shine { animation: card-foil-pulse 5s ease-in-out infinite alternate; }
+
+@keyframes card-foil-pulse {
+  from { opacity: .36; filter: saturate(.9); }
+  to { opacity: .78; filter: saturate(1.35); }
+}
+
+.fifa-card-hero-label,.fifa-card-tots-label {
+  position: absolute;
+  z-index: 24;
+  top: 27px;
+  right: 27px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,.38);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff0cf, #edb37d);
+  color: #513052;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .16em;
+  box-shadow: 0 3px 12px rgba(0,0,0,.22);
+}
+
+.fifa-card-tots-label { background: linear-gradient(135deg, #e5ffed, #9ee9c0); color: #145542; }
+
+.card-style-picker { min-width: 0; margin: 4px 0; padding: 15px; border: 1px solid var(--border); border-radius: 16px; }
+.card-style-picker legend { padding: 0 7px; color: var(--text); font-weight: 850; }
+.card-style-picker > p { margin: 0 0 12px; font-size: 12px; }
+.card-style-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.card-style-option { position: relative; display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 65px; padding: 9px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.025); color: var(--text); text-align: left; cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.card-style-option:hover { transform: translateY(-2px); border-color: rgba(197,173,114,.45); }
+.card-style-option.selected { border-color: var(--accent-2); background: rgba(197,173,114,.09); box-shadow: 0 0 0 1px rgba(197,173,114,.12); }
+.card-style-swatch { flex: 0 0 30px; width: 30px; height: 43px; border: 1px solid rgba(255,255,255,.35); border-radius: 8px 8px 10px 10px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.08), 0 4px 10px rgba(0,0,0,.2); }
+.card-style-swatch-auto { background: linear-gradient(145deg,#fbdf76,#b46d2a); }
+.card-style-swatch-gold { background: linear-gradient(145deg,#fff3a5,#a66e12); }
+.card-style-swatch-silver { background: linear-gradient(145deg,#fff,#8a929b); }
+.card-style-swatch-bronze { background: linear-gradient(145deg,#f0b27c,#683419); }
+.card-style-swatch-totw { background: linear-gradient(145deg,#2e2b22,#050505 60%,#caa94e); }
+.card-style-swatch-toty { background: linear-gradient(145deg,#2d789e,#071b31 65%,#d9bc55); }
+.card-style-swatch-tots { background: linear-gradient(145deg,#a9f4c7,#14524e 65%,#d9fff0); }
+.card-style-swatch-hero { background: linear-gradient(145deg,#ffd08a,#75375f 55%,#20233e); }
+.card-style-swatch-prime { background: linear-gradient(145deg,#fff,#d5dce4 62%,#a67625); }
+.card-style-option-copy { display: grid; min-width: 0; gap: 3px; }
+.card-style-option-copy strong { font-size: 12px; }
+.card-style-option-copy small { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.card-style-check { position: absolute; top: 5px; right: 7px; color: var(--accent-2); font-size: 12px; font-weight: 900; }
+
+@media (max-width: 560px) {
+  .card-style-picker { padding: 11px; }
+  .card-style-options { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+  .card-style-option { min-height: 59px; padding: 7px; gap: 7px; }
+  .card-style-swatch { flex-basis: 25px; width: 25px; height: 37px; }
+  .card-style-option-copy strong { font-size: 11px; }
+  .card-style-option-copy small { font-size: 8px; }
+}
+
+/* Hero edition: neon blue/purple frame with warm electric highlights. */
+.fifa-card-hero {
+  --card-light: #79eaff;
+  --card-mid: #263d91;
+  --card-dark: #100d31;
+  --card-accent: #d566f3;
+  --card-text: #f8f5ff;
+  box-shadow: 0 32px 75px rgba(0,0,0,.5), 0 0 34px rgba(93,111,255,.3), 0 0 52px rgba(214,75,255,.16);
+}
+
+.fifa-card-hero .fifa-card-inner {
+  background:
+    radial-gradient(ellipse at 70% 28%, rgba(255,145,89,.5), transparent 21%),
+    radial-gradient(ellipse at 71% 20%, rgba(45,220,255,.45), transparent 30%),
+    radial-gradient(ellipse at 24% 55%, rgba(117,54,255,.48), transparent 39%),
+    linear-gradient(132deg, transparent 0 22%, rgba(57,224,255,.38) 22.4% 23%, transparent 23.5% 48%, rgba(231,88,255,.25) 48.4% 49%, transparent 49.5%),
+    repeating-linear-gradient(135deg, transparent 0 23px, rgba(255,255,255,.035) 24px 25px, transparent 26px 43px),
+    linear-gradient(145deg, #162d73 0%, #101b4c 43%, #17103c 72%, #090d27 100%);
+}
+
+.fifa-card-hero .fifa-card-inner::before {
+  border-color: rgba(112,229,255,.92);
+  box-shadow: inset 0 0 22px rgba(48,181,255,.22), 0 0 12px rgba(70,199,255,.3);
+}
+
+.fifa-card-hero .fifa-card-inner::after { border-color: rgba(216,116,255,.72); }
+.fifa-card-hero .fifa-card-shine { background: radial-gradient(ellipse 54% 33% at 70% 18%, rgba(255,181,115,.52), transparent 72%), linear-gradient(125deg, transparent 37%, rgba(93,238,255,.13) 48%, transparent 57%); }
+.fifa-card-hero .fifa-card-glow { background: radial-gradient(ellipse, rgba(98,91,255,.36), transparent 68%); filter: blur(28px); }
+.fifa-card-hero .fifa-overall,.fifa-card-hero .fifa-position,.fifa-card-hero .fifa-player-name,.fifa-card-hero .fifa-stat { color: #f6f5ff; text-shadow: 0 2px 8px rgba(4,7,34,.92), 0 0 12px rgba(99,201,255,.25); }
+.fifa-card-hero .fifa-card-hero-label { border-color: rgba(255,197,124,.8); background: linear-gradient(135deg,#ffe2a4,#ff9c68 54%,#dc65d8); color: #24123e; }
+.card-style-swatch-hero { background: linear-gradient(145deg,#35dcff,#273c98 50%,#db54ef 78%,#ffad68); }
+
+/* Hero artwork asset: live card fields align with its hexagon, nameplate and stats area. */
+.fifa-card-hero .fifa-card-inner {
+  background:
+    linear-gradient(180deg, rgba(4,8,31,.06), rgba(5,9,32,.02) 64%, rgba(16,13,24,.14)),
+    url('/cards/card-hero-neon.png') center 50% / cover no-repeat;
+}
+
+.fifa-card-hero .fifa-card-rating {
+  top: 10.5%;
+  left: 12%;
+  width: 20%;
+  height: 15%;
+  justify-content: center;
+}
+
+.fifa-card-hero .fifa-overall { font-size: 46px; letter-spacing: -3px; }
+.fifa-card-hero .fifa-position { margin-top: 5px; font-size: 12px; }
+.fifa-card-hero .fifa-form { display: none; }
+.fifa-card-hero .fifa-player-name { top: 66.5%; }
+.fifa-card-hero .fifa-card-hero-label { top: 4%; left: 50%; right: auto; transform: translateX(-50%); padding: 4px 9px; }
+.fifa-card-hero .fifa-stats { text-shadow: 0 2px 7px rgba(10,8,20,.9); }
+
+/* Keep long surnames inside the nameplates on the Hero and Icona artwork. */
+.fifa-card-hero .fifa-player-name,
+.fifa-card-prime .fifa-player-name { left: 16%; right: 16%; }
+.fifa-card-hero .fifa-player-name strong,
+.fifa-card-prime .fifa-player-name strong {
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 0;
+  font-size: min(23px, var(--card-surname-font-size, 28px));
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* TOTW black/gold artwork and matching surname plate. */
+.fifa-card-totw .fifa-card-inner {
+  background:
+    linear-gradient(180deg, rgba(5,5,8,.05), rgba(5,5,8,0) 62%, rgba(5,5,8,.12)),
+    url('/cards/card-totw-black-gold.png') center 50% / cover no-repeat;
+}
+
+.fifa-card-totw .fifa-player-name { top: 66.5%; left: 16%; right: 16%; }
+.fifa-card-totw .fifa-player-name strong {
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 0;
+  font-size: min(23px, var(--card-surname-font-size, 28px));
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #20180c;
+  text-shadow: 0 1px 1px rgba(255,239,194,.55);
+}
+
+/* Consistent edition name at the top center of every card. */
+.fifa-card-style-label {
+  position: absolute;
+  z-index: 30;
+  top: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 38%;
+  padding: 4px 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.58);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff7df, #dfc275);
+  color: #382b13;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  line-height: 1.1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0,0,0,.28);
+  pointer-events: none;
+}
+
+.fifa-card-style-label-bronze { background: linear-gradient(135deg,#f2c69f,#9e5d36); color: #2e170d; }
+.fifa-card-style-label-silver { background: linear-gradient(135deg,#fff,#9ba7b5); color: #1d2935; }
+.fifa-card-style-label-gold { background: linear-gradient(135deg,#fff1a8,#c38b25); color: #44310c; }
+.fifa-card-style-label-totw { border-color: rgba(255,220,137,.84); background: linear-gradient(135deg,#fff0bd,#b88829); color: #241a08; }
+.fifa-card-style-label-toty { border-color: rgba(190,234,255,.9); background: linear-gradient(135deg,#f4fdff,#88d9ff); color: #113b55; }
+.fifa-card-style-label-tots { background: linear-gradient(135deg,#e5ffed,#9ee9c0); color: #145542; }
+.fifa-card-style-label-hero { border-color: rgba(255,197,124,.8); background: linear-gradient(135deg,#ffe2a4,#ff9c68 54%,#dc65d8); color: #24123e; }
+.fifa-card-style-label-prime { border-color: rgba(148,102,21,.45); background: linear-gradient(135deg,#fff9df,#e8d094); color: #76500e; }
+
+/* The two metallic designs have a compact rating area. */
+.fifa-card-toty .fifa-overall,
+.fifa-card-totw .fifa-overall { font-size: 42px; letter-spacing: -3px; }
+.fifa-card-toty .fifa-card-rating,
+.fifa-card-totw .fifa-card-rating,
+.fifa-card-tots .fifa-card-rating { top: 42px; }
+
+/* TOTS emerald artwork with the live surname on its gold nameplate. */
+.fifa-card-tots .fifa-card-inner {
+  background:
+    linear-gradient(180deg, rgba(3,25,21,.03), rgba(3,25,21,0) 62%, rgba(2,22,18,.12)),
+    url('/cards/card-tots-emerald.png') center 50% / cover no-repeat;
+}
+
+.fifa-card-tots .fifa-player-name { top: 66.5%; left: 16%; right: 16%; }
+.fifa-card-tots .fifa-player-name strong {
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 0;
+  color: #173e34;
+  font-size: min(23px, var(--card-surname-font-size, 28px));
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px rgba(245,255,222,.65);
+}
+
+/* Goal entry: clear labels and thumb-friendly controls, especially on phones. */
+.goal-editor { display: grid; gap: 12px; padding: 16px; }
+.goal-top { margin-bottom: 0; }
+.goal-top b { font-size: 15px; }
+.goal-remove-btn { width: 44px; height: 44px; border: 1px solid var(--border); background: rgba(255,255,255,.035); }
+.goal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.goal-field { display: grid; min-width: 0; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.goal-field .input { min-width: 0; min-height: 48px; margin-top: 0; padding: 11px 12px; color: var(--text); font-size: 14px; }
+.goal-team-field,
+.goal-minute-field { grid-column: 1 / -1; }
+.goal-team-field .input { border-color: rgba(25,196,119,.4); background: rgba(25,196,119,.07); font-weight: 800; }
+.goal-own-goal { min-height: 44px; margin-top: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.025); font-size: 12px; line-height: 1.4; }
+.goal-own-goal input { width: 20px; height: 20px; flex: 0 0 20px; }
+
+@media (max-width: 680px) {
+  .goal-editor { gap: 10px; padding: 13px; }
+  .goal-grid { grid-template-columns: minmax(0, 1fr); gap: 11px; }
+  .goal-team-field,
+  .goal-minute-field { grid-column: auto; }
+  .goal-field { font-size: 12px; }
+  .goal-field .input { min-height: 50px; font-size: 16px; }
+  .goal-own-goal { align-items: flex-start; font-size: 12px; }
+}
+
+@media (max-width: 560px) {
+  .fifa-card-style-label { top: 4.5%; padding: 3px 8px; font-size: 8px; }
+  .fifa-card-toty .fifa-overall,
+  .fifa-card-totw .fifa-overall { font-size: 38px; letter-spacing: -2.5px; }
+  .fifa-card-toty .fifa-card-rating,
+  .fifa-card-totw .fifa-card-rating,
+  .fifa-card-tots .fifa-card-rating { top: 35px; }
 }

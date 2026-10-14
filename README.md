@@ -128,7 +128,8 @@ Nel progetto Supabase:
 5. Esegui `supabase/match-reminders.sql` per abilitare i promemoria 24 ore e circa 3 ore prima delle partite. Questo script abilita `pg_cron` e crea il controllo ogni 15 minuti.
 6. Esegui `supabase/notification-messages-and-cancellations.sql` per personalizzare convocazioni, risultati e votazioni e conservare gli avvisi di annullamento.
 7. Esegui `supabase/match-roster-update-notifications.sql` per notificare le modifiche alle formazioni.
-8. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
+8. Esegui `supabase/player-card-styles.sql` per permettere a ciascun giocatore di salvare l'estetica scelta per la propria carta.
+9. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
 
 Su iPhone il sito deve essere aggiunto alla schermata Home e le notifiche consentite; il Web Push per le web app su iOS richiede iOS 16.4 o successivo. Su Android si può attivare dal sito nel browser compatibile.
 
