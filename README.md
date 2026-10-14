@@ -38,6 +38,7 @@ Calcetto Club è una web app privata per organizzare le partite del proprio grup
 - Promemoria automatici circa 24 ore e 3 ore prima della partita per i giocatori assegnati.
 - Il controllo dei promemoria viene eseguito ogni 15 minuti tramite `pg_cron`.
 - Alla creazione ogni giocatore approvato riceve una convocazione o un avviso che non è stato inserito in formazione.
+- Quando vengono aggiornate le squadre, i giocatori ricevono una notifica con la propria squadra o un avviso di aggiornamento delle formazioni.
 - Il risultato notifica anche il capocannoniere della partita; l’apertura delle votazioni invita a votare con serietà e un tocco di ironia.
 - Se una partita viene eliminata, i giocatori ricevono l’avviso di annullamento, che resta nella campanella anche dopo la cancellazione.
 
@@ -126,7 +127,8 @@ Nel progetto Supabase:
 4. Esegui `supabase/push-webhook-net.sql` per collegare le notifiche all’endpoint push Vercel usando `pg_net`. Se usi un dominio Vercel diverso da `club-calcio.vercel.app`, aggiorna l’URL nel file prima di eseguirlo.
 5. Esegui `supabase/match-reminders.sql` per abilitare i promemoria 24 ore e circa 3 ore prima delle partite. Questo script abilita `pg_cron` e crea il controllo ogni 15 minuti.
 6. Esegui `supabase/notification-messages-and-cancellations.sql` per personalizzare convocazioni, risultati e votazioni e conservare gli avvisi di annullamento.
-7. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
+7. Esegui `supabase/match-roster-update-notifications.sql` per notificare le modifiche alle formazioni.
+8. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
 
 Su iPhone il sito deve essere aggiunto alla schermata Home e le notifiche consentite; il Web Push per le web app su iOS richiede iOS 16.4 o successivo. Su Android si può attivare dal sito nel browser compatibile.
 

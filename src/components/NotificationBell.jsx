@@ -6,6 +6,7 @@ const TYPE_ICON = {
   match_created: '⚽',
   match_invited: '⚽',
   match_not_invited: '📭',
+  match_teams_updated: '📋',
   match_cancelled: '🛑',
   result_entered: '🏆',
   voting_open: '🗳️',
