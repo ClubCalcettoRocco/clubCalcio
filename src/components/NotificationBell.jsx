@@ -11,7 +11,10 @@ const TYPE_ICON = {
   result_entered: '🏆',
   voting_open: '🗳️',
   match_reminder_24h: '⏰',
-  match_reminder_3h: '⏰'
+  match_reminder_3h: '⏰',
+  match_poll_open: '📊',
+  match_poll_one_left: '👀',
+  match_poll_slot_open: '⚽'
 }
 
 export default function NotificationBell({ userId }) {
@@ -33,7 +36,7 @@ export default function NotificationBell({ userId }) {
     if (!userId) return
     const { data, error: queryError } = await supabase
       .from('notifications')
-      .select('id, match_id, type, title, body, created_at, read_at')
+      .select('id, match_id, poll_id, type, title, body, created_at, read_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(25)
@@ -94,7 +97,8 @@ export default function NotificationBell({ userId }) {
   async function openNotification(item) {
     await markRead([item.id])
     setOpen(false)
-    if (item.type === 'voting_open' && item.match_id) navigate(`/votazioni?match=${item.match_id}`)
+    if (item.poll_id || item.type.startsWith('match_poll_')) navigate('/sondaggi')
+    else if (item.type === 'voting_open' && item.match_id) navigate(`/votazioni?match=${item.match_id}`)
     else if (item.match_id) navigate(`/partite/${item.match_id}`)
   }
 

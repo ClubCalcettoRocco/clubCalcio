@@ -25,6 +25,7 @@ const Home = lazy(() => import('./pages/Home'))
 const Matches = lazy(() => import('./pages/Matches'))
 const MatchDetail = lazy(() => import('./pages/MatchDetail'))
 const MatchForm = lazy(() => import('./pages/MatchForm'))
+const Polls = lazy(() => import('./pages/Polls'))
 const MatchResult = lazy(() => import('./pages/MatchResult'))
 const Rankings = lazy(() => import('./pages/Rankings'))
 const Players = lazy(() => import('./pages/Players'))
@@ -164,6 +165,9 @@ export default function App({ updateServiceWorker }) {
               path="/partite"
               element={<Matches />}
             />
+
+            <Route path="/sondaggi" element={<Polls />} />
+            <Route path="/sondaggi/nuovo" element={<Polls />} />
 
             <Route
               path="/votazioni"

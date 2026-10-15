@@ -52,6 +52,16 @@ export function DataProvider({ children }) {
     reload()
   }, [reload])
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('club-matches-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players' }, reload)
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [reload])
+
   const playersById = useMemo(
     () => Object.fromEntries(
       state.players.map((p) => [p.id, p])

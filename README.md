@@ -11,6 +11,8 @@ Calcetto Club è una web app privata per organizzare le partite del proprio grup
 - Inserimento di ospiti senza account.
 - Composizione manuale delle squadre oppure proposta dell’assistente AI, modificabile prima di salvare.
 - Visualizzazione delle formazioni e dello storico delle partite.
+- Sondaggi di disponibilità creabili da ogni membro approvato. I partecipanti votano “Ci sono” o “Non ci sono”; a 10 adesioni per il calcetto a 5, 16 per il calciotto a 8 e 22 per il calcio a 11, la partita viene creata automaticamente con due squadre.
+- Il sondaggio avvisa i membri quando viene pubblicato, sollecita chi non ha ancora risposto quando manca un’adesione e segnala quando si libera un posto.
 
 ### Risultati e votazioni
 
@@ -132,7 +134,8 @@ Nel progetto Supabase:
 8. Esegui `supabase/player-card-styles.sql` per permettere a ciascun giocatore di salvare l'estetica scelta per la propria carta.
 9. Esegui `supabase/match-mvp-voting.sql` per abilitare le nomination e l’assegnazione automatica dell’MVP.
 10. Esegui `supabase/privacy-player-data.sql` per proteggere email, ID account e foto originali e abilitare il caricamento profilo/amministrazione tramite funzioni protette.
-11. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
+11. Esegui `supabase/match-polls.sql` per creare i sondaggi. Fallo dopo le migrazioni delle notifiche: `notification-messages-and-cancellations.sql`, `match-roster-update-notifications.sql` e `match-reminders.sql`.
+12. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
 
 Su iPhone il sito deve essere aggiunto alla schermata Home e le notifiche consentite; il Web Push per le web app su iOS richiede iOS 16.4 o successivo. Su Android si può attivare dal sito nel browser compatibile.
 

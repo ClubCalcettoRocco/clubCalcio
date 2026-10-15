@@ -2948,6 +2948,70 @@ label > .input {
   }
 }
 
+.poll-page-heading { align-items: center; gap: 16px; margin-bottom: 22px; }
+.poll-page-heading > div { min-width: 0; }
+.poll-page-heading h1 { margin: 4px 0 7px; }
+.poll-page-heading p { margin: 0; max-width: 620px; }
+.poll-create-button { flex: 0 0 auto; min-height: 46px; white-space: nowrap; }
+.poll-top-cta { white-space: nowrap; }
+.poll-create-card { gap: 17px; margin-bottom: 24px; border-color: rgba(210,184,120,.24); background: linear-gradient(140deg,rgba(210,184,120,.075),rgba(255,255,255,.018)); }
+.poll-create-intro { display: flex; align-items: center; gap: 12px; }
+.poll-create-intro > span { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: rgba(210,184,120,.13); font-size: 21px; }
+.poll-create-intro strong,.poll-create-intro small { display: block; }
+.poll-create-intro small { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.poll-form-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; }
+.poll-field { display: grid; min-width: 0; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.poll-field .input { min-width: 0; min-height: 48px; margin: 0; color: var(--text); font-size: 14px; }
+.poll-location-field { grid-column: 1 / -1; }
+.poll-capacity-note { margin: -4px 0 0; color: var(--accent-2); font-size: 12px; }
+.poll-form-actions { display: flex; justify-content: flex-end; }
+.poll-form-actions .btn { min-height: 46px; }
+.poll-empty-state { display: grid; justify-items: center; gap: 9px; padding: 32px 18px; text-align: center; }
+.poll-empty-state > span { font-size: 36px; }
+.poll-empty-state h2,.poll-empty-state p { margin: 0; }
+.poll-list { display: grid; gap: 16px; }
+.poll-card { display: grid; gap: 16px; padding: 21px; border-color: rgba(255,255,255,.09); }
+.poll-card.is-converted { border-color: rgba(210,184,120,.28); background: linear-gradient(130deg,rgba(210,184,120,.06),rgba(255,255,255,.018)); }
+.poll-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.poll-card-header h2 { margin: 10px 0 0; font-size: 20px; }
+.poll-capacity { color: var(--accent-2); font-size: 31px; font-weight: 950; letter-spacing: -.06em; }
+.poll-capacity small { color: var(--muted); font-size: 15px; font-weight: 800; letter-spacing: 0; }
+.poll-meta-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 15px; }
+.poll-meta-grid span { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.poll-meta-grid b { width: 20px; flex: 0 0 20px; text-align: center; }
+.poll-progress { height: 9px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.08); }
+.poll-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#a6586d,#d2b878); transition: width .35s ease; }
+.poll-remaining { margin: -7px 0 0; color: var(--muted); font-size: 12px; }
+.poll-remaining.is-one-left { color: #f0ce75; font-weight: 850; }
+.poll-result-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.poll-result-copy { color: var(--muted); font-size: 12px; }
+.poll-vote-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.poll-vote-actions .btn { min-height: 46px; }
+.poll-vote-actions small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; text-align: center; }
+.poll-vote-yes.is-selected { border-color: rgba(77,211,137,.48); background: rgba(77,211,137,.14); color: #a1edbd; }
+.poll-vote-no.is-selected { border-color: rgba(230,133,123,.4); background: rgba(230,133,123,.1); color: #ffc0b8; }
+
+@media (max-width: 680px) {
+  .poll-page-heading { align-items: flex-start; }
+  .poll-page-heading .poll-create-button { min-height: 42px; padding-inline: 11px; font-size: 11px; }
+  .poll-form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .poll-field .input { min-height: 50px; font-size: 16px; }
+  .poll-card { gap: 13px; padding: 16px; }
+  .poll-card-header h2 { font-size: 18px; }
+  .poll-meta-grid { gap: 10px; }
+}
+
+@media (max-width: 380px) {
+  .poll-page-heading { flex-wrap: wrap; }
+  .poll-page-heading .poll-create-button { margin-left: auto; }
+  .poll-form-grid,.poll-meta-grid { grid-template-columns: minmax(0,1fr); }
+  .poll-location-field { grid-column: auto; }
+}
+
+@media (max-width: 700px) {
+  .poll-top-cta { min-height: 40px; padding: 7px 9px; font-size: 10px; }
+}
+
 /* =========================================================
    REDUCED MOTION
    ========================================================= */

@@ -8,6 +8,7 @@ const NotificationBell = lazy(() => import('./NotificationBell'))
 const ITEMS = [
   ['/', 'Home', '⌂'],
   ['/partite', 'Partite', '⚽'],
+  ['/sondaggi', 'Sondaggi', '📊'],
   ['/votazioni', 'Votazioni', '🗳️'],
   ['/classifiche', 'Classifiche', '🏆'],
   ['/giocatori', 'Giocatori', '👥'],
@@ -93,6 +94,9 @@ export default function Layout({ children }) {
             <Suspense fallback={<span className="notification-bell-placeholder" aria-hidden="true" />}>
               <NotificationBell userId={me?.user_id} />
             </Suspense>
+            <Link to="/sondaggi/nuovo" className="btn primary small poll-top-cta">
+              + Sondaggio
+            </Link>
           {isAdmin && (
             <Link
               to="/partite/nuova"

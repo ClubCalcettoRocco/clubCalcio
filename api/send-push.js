@@ -51,7 +51,9 @@ export default async function handler(req, res) {
     if (error) throw error
     if (!devices?.length) return json(res, 200, { sent: 0 })
 
-    const url = notification.type === 'voting_open' && notification.match_id
+    const url = notification.poll_id || notification.type.startsWith('match_poll_')
+      ? '/sondaggi'
+      : notification.type === 'voting_open' && notification.match_id
       ? `/votazioni?match=${encodeURIComponent(notification.match_id)}`
       : notification.match_id
         ? `/partite/${encodeURIComponent(notification.match_id)}`
