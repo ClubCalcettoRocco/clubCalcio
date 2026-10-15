@@ -3,6 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { supabase } from '../lib/supabase'
 import { fullName } from '../lib/util'
+import { explainError } from '../lib/errorMessage'
+import { ActionError } from '../components/ui'
+import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '../lib/sessionDraft'
 
 const oppositeTeam = team => team === 'A' ? 'B' : 'A'
 
@@ -18,11 +21,12 @@ export default function MatchResult() {
   const { matches, playersById, reload } = useData()
 
   const m = matches.find(x => x.id === id)
+  const draftKey = `clubcalcio:match-result:${id}`
 
-  const [scoreA, setScoreA] = useState(m?.score_a ?? 0)
-  const [scoreB, setScoreB] = useState(m?.score_b ?? 0)
-  const [mvp, setMvp] = useState(m?.mvp_player_id || '')
-  const [goals, setGoals] = useState([])
+  const [scoreA, setScoreA] = useState(() => readSessionDraft(draftKey, null)?.scoreA ?? m?.score_a ?? 0)
+  const [scoreB, setScoreB] = useState(() => readSessionDraft(draftKey, null)?.scoreB ?? m?.score_b ?? 0)
+  const [goals, setGoals] = useState(() => readSessionDraft(draftKey, null)?.goals ?? [])
+  const [draftLoaded, setDraftLoaded] = useState(false)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -74,12 +78,15 @@ export default function MatchResult() {
   useEffect(() => {
     if (!m) return
 
-    setScoreA(m.score_a ?? 0)
-    setScoreB(m.score_b ?? 0)
-    setMvp(m.mvp_player_id || '')
-
-    setGoals(
-      m.goals.map(g => {
+    const savedDraft = readSessionDraft(draftKey, null)
+    if (savedDraft) {
+      setScoreA(savedDraft.scoreA ?? m.score_a ?? 0)
+      setScoreB(savedDraft.scoreB ?? m.score_b ?? 0)
+      setGoals(savedDraft.goals || [])
+    } else {
+      setScoreA(m.score_a ?? 0)
+      setScoreB(m.score_b ?? 0)
+      setGoals(m.goals.map(g => {
         const guestScorer =
           g.guest_scorer_first_name
             ? guestByName(
@@ -111,13 +118,19 @@ export default function MatchResult() {
           credited_team:
             g.credited_team || 'A'
         }
-      })
-    )
+      }))
+    }
+    setDraftLoaded(true)
   }, [
     id,
     m,
     guestRoster
   ])
+
+  useEffect(() => {
+    if (!draftLoaded) return
+    writeSessionDraft(draftKey, { scoreA, scoreB, goals })
+  }, [draftKey, draftLoaded, scoreA, scoreB, goals])
 
   if (!m) {
     return (
@@ -302,33 +315,37 @@ export default function MatchResult() {
      * p_ratings resta vuoto solo per
      * compatibilità con la funzione SQL.
      */
-    const { error } =
-      await supabase.rpc(
+    try {
+      const { error } = await supabase.rpc(
         'save_match_result',
         {
           p_match_id: id,
           p_score_a: Number(scoreA),
           p_score_b: Number(scoreB),
-          p_mvp_player_id:
-            mvp || null,
+          p_mvp_player_id: m.mvp_player_id || null,
           p_ratings: {},
           p_goals:
             normalizedGoals
         }
       )
 
-    if (error) {
-      setErr(error.message)
-    } else {
+      if (error) {
+        setErr(explainError(error, 'Non è stato possibile salvare il risultato.'))
+        return
+      }
+
       await reload()
+      clearSessionDraft(draftKey)
 
       nav(
         `/partite/${id}`,
         { replace: true }
       )
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile salvare il risultato.'))
+    } finally {
+      setBusy(false)
     }
-
-    setBusy(false)
   }
 
   return (
@@ -345,6 +362,7 @@ export default function MatchResult() {
           ? 'Modifica risultato'
           : 'Inserisci risultato'}
       </h1>
+      <p className="draft-saved-note">Punteggio e marcatori vengono conservati temporaneamente in questa scheda finché non riesci a salvarli.</p>
 
       <div className="card stack">
         <div className="score-edit">
@@ -383,31 +401,11 @@ export default function MatchResult() {
           </div>
         </div>
 
-        <label>
-          MVP
-
-          <select
-            className="input"
-            value={mvp}
-            onChange={e =>
-              setMvp(e.target.value)
-            }
-          >
-            <option value="">
-              Nessun MVP
-            </option>
-
-            {registeredRoster.map(x => (
-              <option
-                key={x.player_id}
-                value={x.player_id}
-              >
-                {fullName(x.player)}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
+
+      <p className="muted">
+        L’MVP sarà scelto nella pagina Votazioni in base alle nomination dei partecipanti.
+      </p>
 
       <div
         className="section-head"
@@ -564,11 +562,7 @@ export default function MatchResult() {
         )}
       </div>
 
-      {err && (
-        <p className="error">
-          {err}
-        </p>
-      )}
+      <ActionError message={err} onRetry={save} busy={busy} />
 
       <button
         className="btn primary block"

@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { explainError } from '../lib/errorMessage'
 
 export default function Login() {
   const { session, signIn, signUp } = useAuth()
+  const location = useLocation()
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -13,7 +15,10 @@ export default function Login() {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
-  if (session) return <Navigate to="/" replace />
+  const returnTo = location.state?.from
+    ? `${location.state.from.pathname || '/'}${location.state.from.search || ''}${location.state.from.hash || ''}`
+    : '/'
+  if (session) return <Navigate to={returnTo} replace />
 
   async function submit(e) {
     e.preventDefault()
@@ -29,7 +34,7 @@ export default function Login() {
         else setMessage('Account creato. L’amministratore dovrà approvarlo.')
       }
     } catch (e) {
-      setErr(e.message || 'Operazione non riuscita')
+      setErr(explainError(e, 'Accesso non riuscito. Controlla i dati e riprova.'))
     } finally { setBusy(false) }
   }
 
@@ -39,6 +44,7 @@ export default function Login() {
         <div className="logo">⚽</div>
         <h1>Calcetto Club</h1>
         <p className="muted">Partite, marcatori, voti e statistiche del tuo gruppo.</p>
+        {location.state?.from && <div className="notice login-return-notice">Accedi di nuovo per tornare alla schermata che stavi usando.</div>}
 
         <div className="tabs login-tabs">
           <button className={mode === 'login' ? 'on' : ''} onClick={() => { setMode('login'); setErr(''); setMessage('') }}>Accedi</button>
@@ -54,7 +60,7 @@ export default function Login() {
           </>}
           <label>Email<input className="input" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
           <label>Password<input className="input" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={6} value={password} onChange={e => setPassword(e.target.value)} required /></label>
-          {err && <p className="error">{err}</p>}
+          {err && <div className="action-error" role="alert"><span>{err}</span><button type="submit" className="btn small" disabled={busy}>Riprova</button></div>}
           {message && <p className="success">{message}</p>}
           <button className="btn primary block" disabled={busy}>{busy ? 'Attendi…' : mode === 'login' ? 'Entra' : 'Registrati'}</button>
         </form>

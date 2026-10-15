@@ -1,6 +1,9 @@
+import { lazy, Suspense } from 'react'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import NotificationBell from './NotificationBell'
+import ConnectionStatus from './ConnectionStatus'
+
+const NotificationBell = lazy(() => import('./NotificationBell'))
 
 const ITEMS = [
   ['/', 'Home', '⌂'],
@@ -80,11 +83,16 @@ export default function Layout({ children }) {
       <main className="content">
         <header className="topbar">
           <div className="breadcrumbs">
-            {location.pathname === '/' ? 'Dashboard' : 'Calcetto Club'}
+            {location.pathname === '/' ? '' : 'Calcetto Club'}
           </div>
 
           <div className="topbar-actions">
-            <NotificationBell userId={me?.user_id} />
+            <time className="topbar-date" dateTime={new Date().toISOString()}>
+              {new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}
+            </time>
+            <Suspense fallback={<span className="notification-bell-placeholder" aria-hidden="true" />}>
+              <NotificationBell userId={me?.user_id} />
+            </Suspense>
           {isAdmin && (
             <Link
               to="/partite/nuova"
@@ -95,6 +103,8 @@ export default function Layout({ children }) {
           )}
           </div>
         </header>
+
+        <ConnectionStatus />
 
         <div className="page-wrap">
           {children}

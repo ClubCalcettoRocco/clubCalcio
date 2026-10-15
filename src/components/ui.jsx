@@ -12,6 +12,16 @@ export function Spinner({ label = 'Caricamento…' }) {
   return <div className="center"><div className="spinner" /><p className="muted">{label}</p></div>
 }
 
+export function ActionError({ message, onRetry, busy = false }) {
+  if (!message) return null
+  return (
+    <div className="action-error" role="alert">
+      <span>{message}</span>
+      {onRetry && <button type="button" className="btn small" disabled={busy || !navigator.onLine} onClick={onRetry}>Riprova</button>}
+    </div>
+  )
+}
+
 export function Section({ title, action, children }) {
   return <section className="section"><div className="section-head"><h2>{title}</h2>{action}</div>{children}</section>
 }

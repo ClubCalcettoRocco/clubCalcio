@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
-import { Avatar } from '../components/ui'
+import { ActionError, Avatar } from '../components/ui'
+import { explainError } from '../lib/errorMessage'
 import {
   fullName,
   fmtDate,
@@ -16,13 +17,20 @@ export default function Votazioni() {
   const [searchParams] = useSearchParams()
   const {
     matches,
-    playersById
+    playersById,
+    reload
   } = useData()
 
   const { me } = useAuth()
 
   const [selectedMatchId, setSelectedMatchId] = useState(searchParams.get('match') || '')
   const [votes, setVotes] = useState({})
+  const [mvpVote, setMvpVote] = useState('')
+  const [mvpTallies, setMvpTallies] = useState({})
+  const [mvpLoading, setMvpLoading] = useState(false)
+  const [mvpSaving, setMvpSaving] = useState(false)
+  const [mvpError, setMvpError] = useState('')
+  const [mvpSaved, setMvpSaved] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
@@ -75,14 +83,11 @@ export default function Votazioni() {
    * Profilo del giocatore autenticato.
    */
   const mePlayer = useMemo(() => {
-    if (!me?.user_id) {
+    if (!me?.id) {
       return null
     }
 
-    return Object.values(playersById).find(
-      player =>
-        player.user_id === me.user_id
-    ) || null
+    return playersById[me.id] || null
   }, [
     playersById,
     me
@@ -187,19 +192,20 @@ export default function Votazioni() {
       setErr('')
       setSaved(false)
 
-      const {
-        data,
-        error
-      } = await supabase.rpc(
-        'get_my_match_votes',
-        {
-          p_match_id:
-            selectedMatchId
-        }
-      )
+      let voteResult
+      try {
+        voteResult = await supabase.rpc('get_my_match_votes', {
+          p_match_id: selectedMatchId
+        })
+      } catch (error) {
+        setErr(explainError(error, 'Non è stato possibile caricare i voti.'))
+        setLoading(false)
+        return
+      }
+      const { data, error } = voteResult
 
       if (error) {
-        setErr(error.message)
+        setErr(explainError(error, 'Non è stato possibile caricare i voti.'))
         setLoading(false)
         return
       }
@@ -234,6 +240,49 @@ export default function Votazioni() {
     targets
   ])
 
+  useEffect(() => {
+    let active = true
+
+    async function loadMvpVotes() {
+      if (!selectedMatchId || !mePlayer || !hasParticipation) {
+        setMvpVote('')
+        setMvpTallies({})
+        setMvpLoading(false)
+        return
+      }
+
+      setMvpLoading(true)
+      setMvpError('')
+      let data
+      let error
+      try {
+        const result = await supabase.rpc('get_match_mvp_vote_data', {
+          p_match_id: selectedMatchId
+        })
+        data = result.data
+        error = result.error
+      } catch (requestError) {
+        if (!active) return
+        setMvpError(explainError(requestError, 'Non è stato possibile caricare le nomination MVP.'))
+        setMvpLoading(false)
+        return
+      }
+
+      if (!active) return
+      if (error) {
+        setMvpError(explainError(error, 'Non è stato possibile caricare le nomination MVP.'))
+      } else {
+        const rows = data || []
+        setMvpTallies(Object.fromEntries(rows.map(row => [row.target_player_id, Number(row.vote_count || 0)])))
+        setMvpVote(rows.find(row => row.my_vote)?.my_vote || '')
+      }
+      setMvpLoading(false)
+    }
+
+    loadMvpVotes()
+    return () => { active = false }
+  }, [selectedMatchId, mePlayer, hasParticipation, selectedMatch?.updated_at])
+
   function setVote(
     playerId,
     value
@@ -265,6 +314,12 @@ export default function Votazioni() {
           target.player_id
         ] !== ''
     )
+
+  const mvpRanking = targets
+    .map(target => ({ target, count: mvpTallies[target.player_id] || 0 }))
+    .sort((a, b) => b.count - a.count)
+  const mvpLeader = mvpRanking[0]
+  const mvpSecondCount = mvpRanking[1]?.count || 0
 
   async function saveVotes() {
     if (!selectedMatch || !mePlayer) {
@@ -316,26 +371,51 @@ export default function Votazioni() {
               )
       }))
 
-    const {
-      error
-    } = await supabase.rpc(
-      'save_my_match_votes',
-      {
-        p_match_id:
-          selectedMatch.id,
-
-        p_votes:
-          payload
-      }
-    )
-
-    if (error) {
-      setErr(error.message)
-    } else {
-      setSaved(true)
+    try {
+      const { error } = await supabase.rpc('save_my_match_votes', {
+        p_match_id: selectedMatch.id,
+        p_votes: payload
+      })
+      if (error) setErr(explainError(error, 'Non è stato possibile salvare i voti.'))
+      else setSaved(true)
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile salvare i voti.'))
+    } finally {
+      setSaving(false)
     }
+  }
 
-    setSaving(false)
+  async function saveMvpVote() {
+    if (!selectedMatch || !mvpVote || votesClosed) return
+    setMvpSaving(true)
+    setMvpError('')
+    setMvpSaved(false)
+    try {
+      const { error } = await supabase.rpc('save_my_match_mvp_vote', {
+        p_match_id: selectedMatch.id,
+        p_target_player_id: mvpVote
+      })
+      if (error) {
+        setMvpError(explainError(error, 'Non è stato possibile salvare la nomination MVP.'))
+      } else {
+        setMvpSaved(true)
+        const { data, error: tallyError } = await supabase.rpc('get_match_mvp_vote_data', {
+          p_match_id: selectedMatch.id
+        })
+        if (tallyError) {
+          setMvpError(explainError(tallyError, 'Non è stato possibile aggiornare i voti MVP.'))
+        } else {
+          const rows = data || []
+          setMvpTallies(Object.fromEntries(rows.map(row => [row.target_player_id, Number(row.vote_count || 0)])))
+          setMvpVote(rows.find(row => row.my_vote)?.my_vote || '')
+          await reload()
+        }
+      }
+    } catch (error) {
+      setMvpError(explainError(error, 'Non è stato possibile salvare la nomination MVP.'))
+    } finally {
+      setMvpSaving(false)
+    }
   }
 
   return (
@@ -663,11 +743,7 @@ export default function Votazioni() {
                 MESSAGGI
                 ========================= */}
 
-            {err && (
-              <p className="error">
-                {err}
-              </p>
-            )}
+            <ActionError message={err} onRetry={saveVotes} busy={saving || loading} />
 
             {saved && (
               <p className="success">
@@ -696,6 +772,62 @@ export default function Votazioni() {
                   ? 'Salvataggio…'
                   : 'Salva voti'}
             </button>
+
+            <section className="mvp-vote-section">
+              <div className="mvp-vote-heading">
+                <div>
+                  <span className="eyebrow">IL RICONOSCIMENTO DELLA SERATA</span>
+                  <h2>Vota MVP</h2>
+                  <p>Scegli chi ha fatto la differenza. L’MVP viene assegnato con almeno 2 voti e va al più votato.</p>
+                </div>
+                <span className="mvp-trophy" aria-hidden="true">🏆</span>
+              </div>
+
+              {selectedMatch.mvp_player_id && playersById[selectedMatch.mvp_player_id] ? (
+                <div className="mvp-result-banner">
+                  <span aria-hidden="true">✨</span>
+                  <div><small>MVP DELLA PARTITA</small><strong>{fullName(playersById[selectedMatch.mvp_player_id])}</strong></div>
+                  <b>{mvpTallies[selectedMatch.mvp_player_id] || 0} voti</b>
+                </div>
+              ) : (
+                <div className="mvp-progress-note">
+                  {mvpLeader?.count >= 2 && mvpLeader.count === mvpSecondCount
+                    ? votesClosed
+                      ? 'Parità finale: nessun MVP assegnato perché i primi sono a pari voti.'
+                      : 'C’è un pareggio: serve un altro voto per decidere l’MVP.'
+                    : `${mvpLeader?.count || 0}/2 voti necessari per assegnare il riconoscimento.`}
+                </div>
+              )}
+
+              {mvpLoading ? <p className="muted">Caricamento voti MVP…</p> : (
+                <div className="mvp-candidates">
+                  {targets.map((target, index) => {
+                    const count = mvpTallies[target.player_id] || 0
+                    const selected = mvpVote === target.player_id
+                    return (
+                      <button
+                        type="button"
+                        key={target.player_id}
+                        className={`mvp-candidate ${selected ? 'selected' : ''} ${selectedMatch.mvp_player_id === target.player_id ? 'winner' : ''}`}
+                        disabled={votesClosed}
+                        onClick={() => { setMvpVote(target.player_id); setMvpSaved(false) }}
+                      >
+                        <Avatar player={target.player} size={42} />
+                        <span className="mvp-candidate-name"><strong>{fullName(target.player)}</strong><small>{target.team === 'A' ? selectedMatch.team_a_name : selectedMatch.team_b_name}</small></span>
+                        <span className="mvp-candidate-count">{count}<small>{count === 1 ? 'voto' : 'voti'}</small></span>
+                        <span className="mvp-candidate-check" aria-hidden="true">{selected ? '✓' : index + 1}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              <ActionError message={mvpError} onRetry={mvpVote ? saveMvpVote : undefined} busy={mvpSaving || mvpLoading} />
+              {mvpSaved && <p className="success">La tua nomination MVP è stata salvata.</p>}
+              <button className="btn primary block mvp-submit" disabled={!mvpVote || votesClosed || mvpSaving || mvpLoading || targets.length === 0} onClick={saveMvpVote}>
+                {votesClosed ? '🔒 Votazioni chiuse' : mvpSaving ? 'Salvataggio…' : mvpSaved ? 'Aggiorna il mio voto MVP' : 'Conferma voto MVP'}
+              </button>
+            </section>
 
           </>
         )}

@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { explainError } from './errorMessage'
 
 const AuthCtx = createContext(null)
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [me, setMe] = useState(null)
+  const [profileError, setProfileError] = useState('')
 
   const [sessionLoading, setSessionLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(true)
@@ -45,22 +47,34 @@ export function AuthProvider({ children }) {
     async function loadProfile() {
       if (!session?.user?.id) {
         setMe(null)
+        setProfileError('')
         setProfileLoading(false)
         return
       }
 
       setProfileLoading(true)
 
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-
-      if (!alive) return
-
-      setMe(error ? null : data)
-      setProfileLoading(false)
+      setProfileError('')
+      try {
+        const { data, error } = await supabase.rpc('get_my_profile')
+        if (!alive) return
+        if (error) {
+          setProfileError(explainError(error, 'Non è stato possibile caricare il profilo.'))
+          setMe(null)
+        } else {
+          setMe(data ? {
+            ...data,
+            user_id: session.user.id,
+            email: session.user.email || ''
+          } : null)
+        }
+      } catch (error) {
+        if (!alive) return
+        setProfileError(explainError(error, 'Non è stato possibile caricare il profilo.'))
+        setMe(null)
+      } finally {
+        if (alive) setProfileLoading(false)
+      }
     }
 
     loadProfile()
@@ -74,6 +88,7 @@ export function AuthProvider({ children }) {
     session,
     me,
     loading,
+    profileError,
 
     isAdmin: me?.app_role === 'ADMIN',
     isApproved: Boolean(me?.approved),
@@ -101,15 +116,17 @@ export function AuthProvider({ children }) {
     refreshMe: async () => {
       if (!session?.user?.id) return null
 
-      const { data } = await supabase
-        .from('players')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-
-      setMe(data || null)
-
-      return data
+      setProfileError('')
+      try {
+        const { data, error } = await supabase.rpc('get_my_profile')
+        if (error) throw error
+        const next = data ? { ...data, user_id: session.user.id, email: session.user.email || '' } : null
+        setMe(next)
+        return next
+      } catch (error) {
+        setProfileError(explainError(error, 'Non è stato possibile caricare il profilo.'))
+        return null
+      }
     }
   }
 

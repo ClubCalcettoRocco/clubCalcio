@@ -3,7 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
-import { Avatar } from '../components/ui'
+import { ActionError, Avatar } from '../components/ui'
+import { explainError } from '../lib/errorMessage'
+import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '../lib/sessionDraft'
 import {
   TYPES,
   fullName,
@@ -84,9 +86,11 @@ export default function MatchForm() {
   }, [existing])
 
   const [f, setF] = useState(initial)
+  const draftKey = `clubcalcio:match-form:${id || 'new'}`
+  const guestDraftKey = `${draftKey}:guest-fields`
 
-  const [guestFirstName, setGuestFirstName] = useState('')
-  const [guestLastName, setGuestLastName] = useState('')
+  const [guestFirstName, setGuestFirstName] = useState(() => readSessionDraft(guestDraftKey, { first: '', last: '' }).first)
+  const [guestLastName, setGuestLastName] = useState(() => readSessionDraft(guestDraftKey, { first: '', last: '' }).last)
 
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -99,8 +103,16 @@ export default function MatchForm() {
   const [positionFilter, setPositionFilter] = useState('')
 
   useEffect(() => {
-    setF(initial)
-  }, [initial])
+    setF(readSessionDraft(draftKey, initial))
+  }, [draftKey, initial])
+
+  useEffect(() => {
+    writeSessionDraft(draftKey, f)
+  }, [draftKey, f])
+
+  useEffect(() => {
+    writeSessionDraft(guestDraftKey, { first: guestFirstName, last: guestLastName })
+  }, [guestDraftKey, guestFirstName, guestLastName])
 
   if (id && !existing) {
     return <p className="muted">Partita non trovata.</p>
@@ -474,26 +486,26 @@ export default function MatchForm() {
       team_b
     }
 
-    const { data, error } =
-      await supabase.rpc(
+    try {
+      const { data, error } = await supabase.rpc(
         'save_match_with_guests',
-        {
-          p_id: id || null,
-          p: payload
-        }
+        { p_id: id || null, p: payload }
       )
 
-    if (error) {
-      setErr(error.message)
-    } else {
+      if (error) {
+        setErr(explainError(error, 'Non è stato possibile salvare la partita.'))
+        return
+      }
+
       await reload()
-
-      nav(`/partite/${data}`, {
-        replace: true
-      })
+      clearSessionDraft(draftKey)
+      clearSessionDraft(guestDraftKey)
+      nav(`/partite/${data}`, { replace: true })
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile salvare la partita.'))
+    } finally {
+      setBusy(false)
     }
-
-    setBusy(false)
   }
 
   function renderTeam(team) {
@@ -553,6 +565,7 @@ export default function MatchForm() {
           ? 'Modifica partita'
           : 'Crea partita'}
       </h1>
+      <p className="draft-saved-note">La bozza viene conservata temporaneamente in questa scheda, anche se la connessione salta.</p>
 
       <div className="card stack">
 
@@ -737,11 +750,7 @@ export default function MatchForm() {
         </p>
       )}
 
-      {err && (
-        <p className="error">
-          {err}
-        </p>
-      )}
+      <ActionError message={err} onRetry={save} busy={busy} />
 
       <button
         className="btn primary block"

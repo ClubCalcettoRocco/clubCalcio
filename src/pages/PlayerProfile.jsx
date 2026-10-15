@@ -10,12 +10,15 @@ import BadgeCard from '../components/BadgeCard'
 
 import {
   Avatar,
+  ActionError,
   TrendChart,
   Section,
   StatBox
 } from '../components/ui'
 
 import AvatarUpload from '../components/AvatarUpload'
+import { explainError } from '../lib/errorMessage'
+import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '../lib/sessionDraft'
 import PlayerCard, { CARD_STYLE_OPTIONS } from '../components/PlayerCard'
 
 import {
@@ -26,7 +29,7 @@ import {
 
 export default function PlayerProfile({ self = false }) {
   const { id } = useParams()
-  const { me } = useAuth()
+  const { me, isAdmin } = useAuth()
 
   const {
     playersById,
@@ -36,6 +39,7 @@ export default function PlayerProfile({ self = false }) {
   } = useData()
 
   const playerId = self ? me?.id : id
+  const draftKey = `clubcalcio:profile:${playerId || 'unknown'}`
 
   const player = playersById[playerId]
   const stats = statsById[playerId]
@@ -58,6 +62,7 @@ export default function PlayerProfile({ self = false }) {
 
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
+  const [saving, setSaving] = useState(false)
 
   /*
    * =========================================================
@@ -68,19 +73,20 @@ export default function PlayerProfile({ self = false }) {
   useEffect(() => {
     if (!player) return
 
-    setFirstName(player.first_name || '')
-    setLastName(player.last_name || '')
-    setRole(player.role_label || '')
-    setPhoto(player.photo_url || '')
-
-    setHeight(player.height_cm ?? '')
-    setWeight(player.weight_kg ?? '')
-
-    setPosition(player.position || '')
-    setPreferredFoot(player.preferred_foot || '')
-    setPlayStyle(player.play_style || '')
-    setCardStyle(player.card_style || 'auto')
+    const draft = readSessionDraft(draftKey, null)
+    const source = draft || player
+    setFirstName(source.first_name || '')
+    setLastName(source.last_name || '')
+    setRole(source.role_label || '')
+    setPhoto(source.photo_url || '')
+    setHeight(source.height_cm ?? '')
+    setWeight(source.weight_kg ?? '')
+    setPosition(source.position || '')
+    setPreferredFoot(source.preferred_foot || '')
+    setPlayStyle(source.play_style || '')
+    setCardStyle(source.card_style || 'auto')
   }, [
+    draftKey,
     player?.id,
     player?.first_name,
     player?.last_name,
@@ -93,6 +99,22 @@ export default function PlayerProfile({ self = false }) {
     player?.play_style,
     player?.card_style
   ])
+
+  useEffect(() => {
+    if (!edit) return
+    writeSessionDraft(draftKey, {
+      first_name: firstName,
+      last_name: lastName,
+      role_label: role,
+      photo_url: photo,
+      height_cm: height,
+      weight_kg: weight,
+      position,
+      preferred_foot: preferredFoot,
+      play_style: playStyle,
+      card_style: cardStyle
+    })
+  }, [draftKey, edit, firstName, lastName, role, photo, height, weight, position, preferredFoot, playStyle, cardStyle])
 
   /*
    * =========================================================
@@ -199,10 +221,14 @@ export default function PlayerProfile({ self = false }) {
    */
 
   async function saveProfile(e) {
-    e.preventDefault()
+    e?.preventDefault()
+    if (saving) return
+    setSaving(true)
 
     setErr('')
     setMsg('')
+
+    try {
 
     if (
       height !== '' &&
@@ -236,7 +262,7 @@ export default function PlayerProfile({ self = false }) {
     )
 
     if (cardStyleError) {
-      setErr(`Impossibile salvare lo stile della carta. Esegui prima supabase/player-card-styles.sql in Supabase. ${cardStyleError.message}`)
+      setErr(explainError(cardStyleError, 'Impossibile salvare lo stile della carta.'))
       return
     }
 
@@ -270,14 +296,20 @@ export default function PlayerProfile({ self = false }) {
     )
 
     if (error) {
-      setErr(error.message)
+      setErr(explainError(error, 'Non è stato possibile salvare il profilo.'))
       return
     }
 
     await reload()
 
+    clearSessionDraft(draftKey)
     setEdit(false)
     setMsg('Profilo aggiornato.')
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile salvare il profilo.'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   /*
@@ -362,6 +394,19 @@ export default function PlayerProfile({ self = false }) {
           </button>
         )}
       </div>
+
+      <details className="privacy-access-card card">
+        <summary>Visibilità e permessi</summary>
+        <div className="privacy-access-content">
+          <p><strong>Visibile ai membri approvati:</strong> nome, foto, ruolo, preferenze di gioco, convocazioni, risultati e statistiche del profilo.</p>
+          <p><strong>Dati riservati:</strong> email e identificativo dell’account non sono mostrati nei profili e sono accessibili solo tramite le funzioni amministrative protette.</p>
+          <p>{isAdmin
+            ? 'Con il ruolo amministratore puoi gestire convocazioni, risultati, profili e approvazione degli account.'
+            : self
+              ? 'Puoi modificare il tuo profilo e votare; convocazioni, risultati e profili degli altri giocatori sono gestiti dagli amministratori.'
+              : 'Il giocatore può aggiornare il proprio profilo. Convocazioni, risultati e profili degli altri giocatori sono gestiti dagli amministratori.'}</p>
+        </div>
+      </details>
 
       {/* =====================================================
           MODIFICA PROFILO
@@ -580,11 +625,7 @@ export default function PlayerProfile({ self = false }) {
             size={96}
           />
 
-          {err && (
-            <p className="error">
-              {err}
-            </p>
-          )}
+          <ActionError message={err} onRetry={() => saveProfile()} busy={saving} />
 
           {msg && (
             <p className="success">
@@ -595,8 +636,9 @@ export default function PlayerProfile({ self = false }) {
           <button
             type="submit"
             className="btn primary"
+            disabled={saving}
           >
-            Salva profilo
+            {saving ? 'Salvataggio…' : 'Salva profilo'}
           </button>
         </form>
       )}

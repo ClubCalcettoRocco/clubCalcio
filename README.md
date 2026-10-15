@@ -15,7 +15,8 @@ Calcetto Club è una web app privata per organizzare le partite del proprio grup
 ### Risultati e votazioni
 
 - Registrazione del risultato, dei marcatori, degli assist e degli autogol.
-- Assegnazione dell’MVP e dei voti ai giocatori.
+- Voti dei giocatori e nomination MVP separate dal risultato.
+- L’MVP viene assegnato automaticamente al più votato quando riceve almeno due nomination; in caso di parità non viene assegnato.
 - Apertura delle votazioni dopo una partita e possibilità di votare i compagni.
 
 ### Giocatori e classifiche
@@ -129,7 +130,9 @@ Nel progetto Supabase:
 6. Esegui `supabase/notification-messages-and-cancellations.sql` per personalizzare convocazioni, risultati e votazioni e conservare gli avvisi di annullamento.
 7. Esegui `supabase/match-roster-update-notifications.sql` per notificare le modifiche alle formazioni.
 8. Esegui `supabase/player-card-styles.sql` per permettere a ciascun giocatore di salvare l'estetica scelta per la propria carta.
-9. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
+9. Esegui `supabase/match-mvp-voting.sql` per abilitare le nomination e l’assegnazione automatica dell’MVP.
+10. Esegui `supabase/privacy-player-data.sql` per proteggere email, ID account e foto originali e abilitare il caricamento profilo/amministrazione tramite funzioni protette.
+11. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
 
 Su iPhone il sito deve essere aggiunto alla schermata Home e le notifiche consentite; il Web Push per le web app su iOS richiede iOS 16.4 o successivo. Su Android si può attivare dal sito nel browser compatibile.
 
@@ -151,6 +154,7 @@ Per usare un hosting diverso da Vercel occorre configurare il fallback SPA su `i
 ## Sicurezza e dati
 
 - Supabase Row Level Security limita l’accesso ai dati in base all’utente e al ruolo.
+- I membri approvati vedono i profili di squadra, le convocazioni e le statistiche; email, ID account e foto originali restano riservati tramite `supabase/privacy-player-data.sql`.
 - La chiave pubblica Supabase è usata dal client; le chiavi segrete e la service role key sono esclusivamente server-side.
 - Le statistiche sono calcolate dalla vista `player_stats`.
 - I dati delle partite restano nel database fino a quando un admin non elimina la partita.

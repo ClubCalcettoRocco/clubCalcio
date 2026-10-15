@@ -218,6 +218,15 @@ export default function Home() {
 
       </Section>
 
+      <Link to="/stagione" className="season-summary-teaser card">
+        <span className="season-teaser-icon" aria-hidden="true">🏆</span>
+        <span className="season-teaser-copy">
+          <strong>Riepilogo stagione</strong>
+          <small>Premi, record e statistiche fino al 31 luglio</small>
+        </span>
+        <span className="season-teaser-arrow" aria-hidden="true">→</span>
+      </Link>
+
       {/* =========================
           ULTIMA PARTITA
           ========================= */}

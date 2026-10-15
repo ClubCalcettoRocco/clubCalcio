@@ -1,9 +1,11 @@
+import { lazy, Suspense } from 'react'
 import {
   BrowserRouter,
   Navigate,
   Outlet,
   Route,
-  Routes
+  Routes,
+  useLocation
 } from 'react-router-dom'
 
 import {
@@ -15,27 +17,30 @@ import { DataProvider } from './lib/data'
 
 import Layout from './components/Layout'
 
-import { Spinner } from './components/ui'
+import { ActionError, Spinner } from './components/ui'
 import PwaUpdatePrompt from './components/PwaUpdatePrompt'
 
-import Login from './pages/Login'
-import Home from './pages/Home'
-import Matches from './pages/Matches'
-import MatchDetail from './pages/MatchDetail'
-import MatchForm from './pages/MatchForm'
-import MatchResult from './pages/MatchResult'
-import Rankings from './pages/Rankings'
-import Players from './pages/Players'
-import PlayerProfile from './pages/PlayerProfile'
-import AdminPlayers from './pages/AdminPlayers'
-import Votazioni from './pages/Votazioni'
+const Login = lazy(() => import('./pages/Login'))
+const Home = lazy(() => import('./pages/Home'))
+const Matches = lazy(() => import('./pages/Matches'))
+const MatchDetail = lazy(() => import('./pages/MatchDetail'))
+const MatchForm = lazy(() => import('./pages/MatchForm'))
+const MatchResult = lazy(() => import('./pages/MatchResult'))
+const Rankings = lazy(() => import('./pages/Rankings'))
+const Players = lazy(() => import('./pages/Players'))
+const PlayerProfile = lazy(() => import('./pages/PlayerProfile'))
+const AdminPlayers = lazy(() => import('./pages/AdminPlayers'))
+const Votazioni = lazy(() => import('./pages/Votazioni'))
+const SeasonSummary = lazy(() => import('./pages/SeasonSummary'))
 
 
 function Protected() {
+  const location = useLocation()
   const {
     session,
     me,
     loading,
+    profileError,
     signOut
   } = useAuth()
 
@@ -48,7 +53,20 @@ function Protected() {
       <Navigate
         to="/login"
         replace
+        state={{ from: location }}
       />
+    )
+  }
+
+  if (profileError) {
+    return (
+      <div className="center page-pad">
+        <div className="card data-error-card">
+          <h2>Profilo non raggiungibile</h2>
+          <ActionError message={profileError} onRetry={() => window.location.reload()} />
+          <button className="btn ghost" onClick={signOut}>Esci e accedi di nuovo</button>
+        </div>
+      </div>
     )
   }
 
@@ -127,8 +145,8 @@ export default function App({ updateServiceWorker }) {
       <PwaUpdatePrompt updateServiceWorker={updateServiceWorker} />
 
       <AuthProvider>
-
-        <Routes>
+        <Suspense fallback={<Spinner label="Caricamento pagina…" />}>
+          <Routes>
 
           <Route
             path="/login"
@@ -190,6 +208,11 @@ export default function App({ updateServiceWorker }) {
             />
 
             <Route
+              path="/stagione"
+              element={<SeasonSummary />}
+            />
+
+            <Route
               path="/giocatori"
               element={<Players />}
             />
@@ -225,7 +248,8 @@ export default function App({ updateServiceWorker }) {
             }
           />
 
-        </Routes>
+          </Routes>
+        </Suspense>
 
       </AuthProvider>
 

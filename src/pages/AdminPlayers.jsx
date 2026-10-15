@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useData } from '../lib/data'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
-import { Avatar } from '../components/ui'
+import { ActionError, Avatar } from '../components/ui'
 import { fullName } from '../lib/util'
 import AvatarUpload from '../components/AvatarUpload'
+import { explainError } from '../lib/errorMessage'
 
 export default function AdminPlayers() {
   const { players, reload } = useData()
@@ -13,6 +14,7 @@ export default function AdminPlayers() {
   const [open, setOpen] = useState(null)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const [retryAction, setRetryAction] = useState(null)
 
   const [form, setForm] = useState({
     first_name: '',
@@ -52,36 +54,39 @@ export default function AdminPlayers() {
   async function save() {
     setSaving(true)
     setErr('')
-
-    const { error } = await supabase
-      .from('players')
-      .update(form)
-      .eq('id', open)
-
-    if (error) {
-      setErr(error.message)
-    } else {
-      await reload()
-      setOpen(null)
+    setRetryAction(null)
+    try {
+      const { error } = await supabase.from('players').update(form).eq('id', open)
+      if (error) {
+        setErr(explainError(error, 'Non è stato possibile salvare il profilo.'))
+        setRetryAction(() => save)
+      } else {
+        await reload()
+        setOpen(null)
+      }
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile salvare il profilo.'))
+      setRetryAction(() => save)
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
   }
 
   async function approve(p) {
     setErr('')
-
-    const { error } = await supabase
-      .from('players')
-      .update({ approved: true })
-      .eq('id', p.id)
-
-    if (error) {
-      setErr(error.message)
-      return
+    setRetryAction(null)
+    try {
+      const { error } = await supabase.from('players').update({ approved: true }).eq('id', p.id)
+      if (error) {
+        setErr(explainError(error, 'Non è stato possibile approvare l’account.'))
+        setRetryAction(() => () => approve(p))
+        return
+      }
+      await reload()
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile approvare l’account.'))
+      setRetryAction(() => () => approve(p))
     }
-
-    await reload()
   }
 
   async function reject(p) {
@@ -92,15 +97,19 @@ export default function AdminPlayers() {
     if (!confirmed) return
 
     setErr('')
+    setRetryAction(null)
 
-    const { error } = await supabase.functions.invoke(
-      'delete-user',
-      {
-        body: {
-          playerId: p.id
-        }
-      }
-    )
+    let response
+    try {
+      response = await supabase.functions.invoke('delete-user', {
+        body: { playerId: p.id }
+      })
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile eliminare l’account.'))
+      setRetryAction(() => () => reject(p))
+      return
+    }
+    const { error } = response
 
     if (error) {
       let message = error.message
@@ -121,7 +130,8 @@ export default function AdminPlayers() {
         }
       }
 
-      setErr(message)
+      setErr(explainError(message, 'Non è stato possibile eliminare l’account.'))
+      setRetryAction(() => () => reject(p))
       return
     }
 
@@ -133,17 +143,13 @@ export default function AdminPlayers() {
       <h1>Amministrazione</h1>
 
       <div className="notice">
-        <b>Account:</b> i nuovi utenti possono registrarsi
-        dalla schermata di accesso. Gli account in attesa
-        devono essere approvati prima di comparire tra
-        i giocatori.
+        <b>Permessi amministratore:</b> puoi approvare gli account,
+        aggiornare i profili e gestire convocazioni e risultati.
+        I giocatori possono modificare solo il proprio profilo;
+        gli account in attesa non compaiono nelle convocazioni.
       </div>
 
-      {err && (
-        <p className="error">
-          {err}
-        </p>
-      )}
+      <ActionError message={err} onRetry={retryAction} busy={saving} />
 
       {/* ========================= */}
       {/* ACCOUNT IN ATTESA */}
@@ -422,12 +428,6 @@ export default function AdminPlayers() {
                 </label>
 
               </div>
-
-              {err && (
-                <p className="error">
-                  {err}
-                </p>
-              )}
 
               <button
                 className="btn primary block"
