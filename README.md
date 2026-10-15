@@ -12,6 +12,8 @@ Calcetto Club è una web app privata per organizzare le partite del proprio grup
 - Composizione manuale delle squadre oppure proposta dell’assistente AI, modificabile prima di salvare.
 - Visualizzazione delle formazioni e dello storico delle partite.
 - Sondaggi di disponibilità creabili da ogni membro approvato. I partecipanti votano “Ci sono” o “Non ci sono”; a 10 adesioni per il calcetto a 5, 16 per il calciotto a 8 e 22 per il calcio a 11, la partita viene creata automaticamente con due squadre.
+- Chi ha creato un sondaggio aperto e gli amministratori possono eliminarlo; le partite già create restano intatte.
+- Nel dettaglio di un sondaggio approvato si vedono i membri che hanno risposto sì, no e quelli ancora in attesa; l’eliminazione avvisa tutti i membri approvati.
 - Il sondaggio avvisa i membri quando viene pubblicato, sollecita chi non ha ancora risposto quando manca un’adesione e segnala quando si libera un posto.
 
 ### Risultati e votazioni

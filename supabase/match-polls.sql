@@ -72,7 +72,7 @@ alter table public.notifications add constraint notifications_type_check check (
   'match_created', 'match_invited', 'match_not_invited', 'match_teams_updated',
   'result_entered', 'voting_open', 'match_cancelled',
   'match_reminder_24h', 'match_reminder_3h',
-  'match_poll_open', 'match_poll_one_left', 'match_poll_slot_open'
+  'match_poll_open', 'match_poll_one_left', 'match_poll_slot_open', 'match_poll_cancelled'
 ));
 
 create or replace function public.create_match_poll(
@@ -113,7 +113,9 @@ begin
 end;
 $$;
 
-create or replace function public.get_match_polls()
+drop function if exists public.get_match_polls();
+
+create function public.get_match_polls()
 returns table (
   id uuid,
   match_type public.match_type,
@@ -123,10 +125,14 @@ returns table (
   match_id uuid,
   created_at timestamptz,
   creator_name text,
+  can_delete boolean,
   yes_count integer,
   no_count integer,
   capacity integer,
-  my_vote boolean
+  my_vote boolean,
+  yes_voters jsonb,
+  no_voters jsonb,
+  pending_voters jsonb
 )
 language plpgsql
 stable
@@ -149,18 +155,95 @@ begin
          poll.match_id,
          poll.created_at,
          coalesce(nullif(trim(concat_ws(' ', creator.first_name, creator.last_name)), ''), 'Giocatore') as creator_name,
+         (poll.created_by = v_player_id or public.current_is_admin()) as can_delete,
          count(vote.player_id) filter (where vote.present)::integer as yes_count,
          count(vote.player_id) filter (where not vote.present)::integer as no_count,
          case poll.type when 'calcetto5' then 10 when 'calciotto8' then 16 when 'calcio11' then 22 end as capacity,
-         mine.present as my_vote
+         mine.present as my_vote,
+         coalesce((
+           select jsonb_agg(jsonb_build_object(
+             'id', yes_player.id,
+             'name', coalesce(nullif(trim(concat_ws(' ', yes_player.first_name, yes_player.last_name)), ''), 'Giocatore'),
+             'photo_url', yes_player.photo_url
+           ) order by lower(concat_ws(' ', yes_player.first_name, yes_player.last_name)))
+           from public.match_poll_votes yes_vote
+           join public.players yes_player on yes_player.id = yes_vote.player_id
+           where yes_vote.poll_id = poll.id and yes_vote.present
+         ), '[]'::jsonb) as yes_voters,
+         coalesce((
+           select jsonb_agg(jsonb_build_object(
+             'id', no_player.id,
+             'name', coalesce(nullif(trim(concat_ws(' ', no_player.first_name, no_player.last_name)), ''), 'Giocatore'),
+             'photo_url', no_player.photo_url
+           ) order by lower(concat_ws(' ', no_player.first_name, no_player.last_name)))
+           from public.match_poll_votes no_vote
+           join public.players no_player on no_player.id = no_vote.player_id
+           where no_vote.poll_id = poll.id and not no_vote.present
+         ), '[]'::jsonb) as no_voters,
+         coalesce((
+           select jsonb_agg(jsonb_build_object(
+             'id', pending_player.id,
+             'name', coalesce(nullif(trim(concat_ws(' ', pending_player.first_name, pending_player.last_name)), ''), 'Giocatore'),
+             'photo_url', pending_player.photo_url
+           ) order by lower(concat_ws(' ', pending_player.first_name, pending_player.last_name)))
+           from public.players pending_player
+           where pending_player.approved = true
+             and not exists (
+               select 1 from public.match_poll_votes pending_vote
+               where pending_vote.poll_id = poll.id and pending_vote.player_id = pending_player.id
+             )
+         ), '[]'::jsonb) as pending_voters
   from public.match_polls poll
   left join public.players creator on creator.id = poll.created_by
   left join public.match_poll_votes vote on vote.poll_id = poll.id
   left join public.match_poll_votes mine on mine.poll_id = poll.id and mine.player_id = v_player_id
   where poll.status = 'open'
      or (poll.status = 'converted' and poll.kickoff > now() - interval '7 days')
-  group by poll.id, creator.first_name, creator.last_name, mine.present
+  group by poll.id, poll.created_by, creator.first_name, creator.last_name, mine.present
   order by (poll.status = 'open') desc, poll.kickoff asc, poll.created_at desc;
+end;
+$$;
+
+create or replace function public.delete_match_poll(p_poll_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_player_id uuid := public.current_player_id();
+  v_poll public.match_polls%rowtype;
+begin
+  if not public.current_is_approved() or v_player_id is null then
+    raise exception 'Profilo non autorizzato';
+  end if;
+
+  select * into v_poll
+  from public.match_polls
+  where id = p_poll_id
+  for update;
+  if not found or v_poll.status = 'cancelled' then
+    raise exception 'Sondaggio non trovato';
+  end if;
+  if v_poll.created_by is distinct from v_player_id and not public.current_is_admin() then
+    raise exception 'Può eliminare il sondaggio solo chi lo ha creato o un amministratore';
+  end if;
+  if v_poll.status <> 'open' then
+    raise exception 'La partita è già stata creata: non puoi eliminare il sondaggio';
+  end if;
+
+  update public.match_polls
+    set status = 'cancelled', updated_at = now()
+  where id = p_poll_id;
+
+  insert into public.notifications(user_id, poll_id, type, title, body)
+  select player.user_id,
+         p_poll_id,
+         'match_poll_cancelled',
+         'Sondaggio annullato 🛑',
+         'Il sondaggio per ' || v_poll.location || ' (' || to_char(v_poll.kickoff at time zone 'Europe/Rome', 'DD/MM alle HH24:MI') || ') è stato eliminato.'
+  from public.players player
+  where player.approved = true and player.user_id is not null;
 end;
 $$;
 
@@ -304,9 +387,11 @@ $$;
 revoke all on function public.create_match_poll(public.match_type, timestamptz, text) from public, anon, authenticated;
 revoke all on function public.get_match_polls() from public, anon, authenticated;
 revoke all on function public.cast_match_poll_vote(uuid, boolean) from public, anon, authenticated;
+revoke all on function public.delete_match_poll(uuid) from public, anon, authenticated;
 grant execute on function public.create_match_poll(public.match_type, timestamptz, text) to authenticated;
 grant execute on function public.get_match_polls() to authenticated;
 grant execute on function public.cast_match_poll_vote(uuid, boolean) to authenticated;
+grant execute on function public.delete_match_poll(uuid) to authenticated;
 
 -- La riga del sondaggio viene aggiornata a ogni voto, quindi basta pubblicare questa tabella
 -- per aggiornare in tempo reale conteggi e stato sugli altri dispositivi.

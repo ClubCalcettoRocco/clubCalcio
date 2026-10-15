@@ -91,20 +91,20 @@ export default function Layout({ children }) {
             <time className="topbar-date" dateTime={new Date().toISOString()}>
               {new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}
             </time>
-            <Suspense fallback={<span className="notification-bell-placeholder" aria-hidden="true" />}>
-              <NotificationBell userId={me?.user_id} />
-            </Suspense>
             <Link to="/sondaggi/nuovo" className="btn primary small poll-top-cta">
               + Sondaggio
             </Link>
-          {isAdmin && (
-            <Link
-              to="/partite/nuova"
-              className="btn primary small top-cta"
-            >
-              + Nuova partita
-            </Link>
-          )}
+            {isAdmin && (
+              <Link
+                to="/partite/nuova"
+                className="btn primary small top-cta"
+              >
+                + Nuova partita
+              </Link>
+            )}
+            <Suspense fallback={<span className="notification-bell-placeholder" aria-hidden="true" />}>
+              <NotificationBell userId={me?.user_id} />
+            </Suspense>
           </div>
         </header>
 

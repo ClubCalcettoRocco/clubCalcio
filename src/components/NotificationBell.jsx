@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -14,7 +15,8 @@ const TYPE_ICON = {
   match_reminder_3h: '⏰',
   match_poll_open: '📊',
   match_poll_one_left: '👀',
-  match_poll_slot_open: '⚽'
+  match_poll_slot_open: '⚽',
+  match_poll_cancelled: '🛑'
 }
 
 export default function NotificationBell({ userId }) {
@@ -180,7 +182,7 @@ export default function NotificationBell({ userId }) {
         {unread > 0 && <span className="notification-count">{unread > 9 ? '9+' : unread}</span>}
       </button>
 
-      {open && (
+      {open && createPortal(
         <section className="notification-panel" aria-label="Le tue notifiche">
           <header className="notification-panel-head">
             <div><strong>Notifiche</strong><small>{unread ? `${unread} da leggere` : 'Sei aggiornato'}</small></div>
@@ -204,7 +206,8 @@ export default function NotificationBell({ userId }) {
               ))}
             </div>
           )}
-        </section>
+        </section>,
+        document.body
       )}
     </div>
   )

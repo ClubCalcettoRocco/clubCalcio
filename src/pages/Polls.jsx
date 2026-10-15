@@ -15,6 +15,26 @@ function dateDefaults() {
   return { date: local.slice(0, 10), time: local.slice(11, 16) }
 }
 
+function PollVoterGroup({ title, people = [], tone, emptyLabel }) {
+  return (
+    <section className={`poll-voter-group poll-voter-group--${tone}`}>
+      <header><strong>{title}</strong><span>{people.length}</span></header>
+      {people.length ? people.map(person => {
+        const initials = (person.name || '?').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
+        return (
+          <div className="poll-voter-row" key={person.id}>
+            {person.photo_url
+              ? <img src={person.photo_url} alt="" />
+              : <span className="poll-voter-avatar">{initials || '?'}</span>}
+            <span className="poll-voter-name">{person.name}</span>
+            <i aria-hidden="true" />
+          </div>
+        )
+      }) : <p>{emptyLabel}</p>}
+    </section>
+  )
+}
+
 export default function Polls() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -30,6 +50,8 @@ export default function Polls() {
   const [voteBusy, setVoteBusy] = useState('')
   const [voteErrors, setVoteErrors] = useState({})
   const [voteRetry, setVoteRetry] = useState({})
+  const [deleteBusy, setDeleteBusy] = useState('')
+  const [deleteErrors, setDeleteErrors] = useState({})
 
   useEffect(() => setShowForm(location.pathname.endsWith('/nuovo')), [location.pathname])
 
@@ -101,6 +123,20 @@ export default function Polls() {
       setVoteErrors(current => ({ ...current, [poll.id]: explainError(error, 'Non è stato possibile registrare la risposta.') }))
     } finally {
       setVoteBusy('')
+    }
+  }
+
+  async function deletePoll(poll) {
+    setDeleteBusy(poll.id)
+    setDeleteErrors(current => ({ ...current, [poll.id]: '' }))
+    try {
+      const { error } = await supabase.rpc('delete_match_poll', { p_poll_id: poll.id })
+      if (error) throw error
+      await refresh()
+    } catch (error) {
+      setDeleteErrors(current => ({ ...current, [poll.id]: explainError(error, 'Non è stato possibile eliminare il sondaggio.') }))
+    } finally {
+      setDeleteBusy('')
     }
   }
 
@@ -186,6 +222,17 @@ export default function Polls() {
                   <span><b>👤</b>Proposto da {poll.creator_name}</span>
                   <span><b>🙋</b>{poll.no_count} {poll.no_count === 1 ? 'non ci sarà' : 'non ci saranno'}</span>
                 </div>
+                <details className="poll-voters">
+                  <summary>
+                    <span>👥 Risposte del gruppo</span>
+                    <small>{poll.yes_count} sì · {poll.no_count} no</small>
+                  </summary>
+                  <div className="poll-voter-groups">
+                    <PollVoterGroup title="Ci sono" people={poll.yes_voters} tone="yes" emptyLabel="Ancora nessuna adesione" />
+                    <PollVoterGroup title="Non ci sono" people={poll.no_voters} tone="no" emptyLabel="Nessun rifiuto" />
+                    <PollVoterGroup title="In attesa" people={poll.pending_voters} tone="pending" emptyLabel="Tutti hanno risposto" />
+                  </div>
+                </details>
                 <div className="poll-progress" role="progressbar" aria-valuenow={poll.yes_count} aria-valuemin={0} aria-valuemax={poll.capacity}>
                   <span style={{ width: `${Math.min(100, poll.yes_count / poll.capacity * 100)}%` }} />
                 </div>
@@ -209,6 +256,21 @@ export default function Polls() {
                   {poll.my_vote == null && <small>La tua risposta è ancora attesa</small>}
                 </div>
                 {voteErrors[poll.id] && <ActionError message={voteErrors[poll.id]} onRetry={() => castVote(poll, voteRetry[poll.id] ?? (poll.my_vote === true))} busy={voteBusy === poll.id} />}
+                {poll.can_delete && !isConverted && (
+                  <div className="poll-delete-row">
+                    <button
+                      type="button"
+                      className="btn ghost poll-delete-button"
+                      disabled={deleteBusy === poll.id}
+                      onClick={() => {
+                        if (window.confirm('Eliminare questo sondaggio? Le risposte raccolte non saranno più visibili.')) deletePoll(poll)
+                      }}
+                    >
+                      {deleteBusy === poll.id ? 'Elimino…' : 'Elimina sondaggio'}
+                    </button>
+                    {deleteErrors[poll.id] && <ActionError message={deleteErrors[poll.id]} onRetry={() => deletePoll(poll)} busy={deleteBusy === poll.id} />}
+                  </div>
+                )}
               </article>
             )
           })}
