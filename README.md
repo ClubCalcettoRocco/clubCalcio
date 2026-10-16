@@ -15,6 +15,7 @@ Calcetto Club è una web app privata per organizzare le partite del proprio grup
 - Chi ha creato un sondaggio aperto e gli amministratori possono eliminarlo; le partite già create restano intatte.
 - Nel dettaglio di un sondaggio approvato si vedono i membri che hanno risposto sì, no e quelli ancora in attesa; l’eliminazione avvisa tutti i membri approvati.
 - Il sondaggio avvisa i membri quando viene pubblicato, sollecita chi non ha ancora risposto quando manca un’adesione e segnala quando si libera un posto.
+- I sondaggi si chiudono e vengono rimossi un’ora prima della partita; la partita eventualmente creata dal sondaggio resta nell’app.
 
 ### Risultati e votazioni
 
@@ -39,6 +40,7 @@ Calcetto Club è una web app privata per organizzare le partite del proprio grup
 ### Notifiche e promemoria
 
 - Campanella con notifiche in app per nuove partite, risultati e apertura delle votazioni.
+- La campanella mostra solo le notifiche delle ultime 48 ore; quelle più vecchie vengono eliminate automaticamente dal database.
 - Notifiche push anche con il sito chiuso, dopo averle abilitate sul dispositivo.
 - Promemoria automatici circa 24 ore e 3 ore prima della partita per i giocatori assegnati.
 - Il controllo dei promemoria viene eseguito ogni 15 minuti tramite `pg_cron`.
@@ -134,10 +136,13 @@ Nel progetto Supabase:
 6. Esegui `supabase/notification-messages-and-cancellations.sql` per personalizzare convocazioni, risultati e votazioni e conservare gli avvisi di annullamento.
 7. Esegui `supabase/match-roster-update-notifications.sql` per notificare le modifiche alle formazioni.
 8. Esegui `supabase/player-card-styles.sql` per permettere a ciascun giocatore di salvare l'estetica scelta per la propria carta.
-9. Esegui `supabase/match-mvp-voting.sql` per abilitare le nomination e l’assegnazione automatica dell’MVP.
-10. Esegui `supabase/privacy-player-data.sql` per proteggere email, ID account e foto originali e abilitare il caricamento profilo/amministrazione tramite funzioni protette.
-11. Esegui `supabase/match-polls.sql` per creare i sondaggi. Fallo dopo le migrazioni delle notifiche: `notification-messages-and-cancellations.sql`, `match-roster-update-notifications.sql` e `match-reminders.sql`.
-12. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
+9. Esegui `supabase/player-card-style-expansions.sql` dopo `player-card-styles.sql` per abilitare Future Star e Shape e rimuovere TOTS.
+10. Esegui `supabase/match-mvp-voting.sql` per abilitare le nomination e l’assegnazione automatica dell’MVP.
+11. Esegui `supabase/privacy-player-data.sql` per proteggere email, ID account e foto originali e abilitare il caricamento profilo/amministrazione tramite funzioni protette.
+12. Esegui `supabase/match-polls.sql` per creare i sondaggi. Fallo dopo le migrazioni delle notifiche: `notification-messages-and-cancellations.sql`, `match-roster-update-notifications.sql` e `match-reminders.sql`.
+13. Esegui `supabase/notification-retention.sql` per mostrare nell’app solo le ultime 48 ore e rimuovere automaticamente le notifiche più vecchie.
+14. Esegui `supabase/match-poll-expiration.sql` per eliminare i sondaggi a un’ora dalla partita; richiede `pg_cron`, abilitato da `match-reminders.sql`.
+15. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
 
 Su iPhone il sito deve essere aggiunto alla schermata Home e le notifiche consentite; il Web Push per le web app su iOS richiede iOS 16.4 o successivo. Su Android si può attivare dal sito nel browser compatibile.
 

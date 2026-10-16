@@ -36,10 +36,12 @@ export default function NotificationBell({ userId }) {
 
   const refresh = useCallback(async () => {
     if (!userId) return
+    const retentionCutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     const { data, error: queryError } = await supabase
       .from('notifications')
       .select('id, match_id, poll_id, type, title, body, created_at, read_at')
       .eq('user_id', userId)
+      .gte('created_at', retentionCutoff)
       .order('created_at', { ascending: false })
       .limit(25)
 

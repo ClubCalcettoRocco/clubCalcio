@@ -8,7 +8,8 @@ export const CARD_STYLE_OPTIONS = [
   { id: 'bronze', label: 'Bronzo', note: 'Bronze Rare' },
   { id: 'totw', label: 'TOTW', note: 'Team of the Week' },
   { id: 'toty', label: 'TOTY', note: 'Team of the Year' },
-  { id: 'tots', label: 'TOTS', note: 'Team of the Season' },
+  { id: 'futurestar', label: 'Future Star', note: 'Future Stars' },
+  { id: 'shape', label: 'Shape', note: 'Shapeshifters' },
   { id: 'hero', label: 'Hero', note: 'Ultimate Team Hero' },
   { id: 'prime', label: 'Icona', note: 'Icon Moments' }
 ]
@@ -19,7 +20,8 @@ const CARD_STYLE_LABELS = {
   gold: 'ORO',
   totw: 'TOTW',
   toty: 'TOTY',
-  tots: 'TOTS',
+  futurestar: 'FUTURE STAR',
+  shape: 'SHAPE',
   hero: 'HERO',
   prime: 'ICONA'
 }
@@ -477,7 +479,8 @@ function getPreviewRarity(previewRarity) {
     'gold',
     'totw',
     'toty',
-    'tots',
+    'futurestar',
+    'shape',
     'hero',
     'prime'
   ]
@@ -656,7 +659,6 @@ export default function PlayerCard({
     const isIconaCard = rarity === 'prime'
     const isTotyCard = rarity === 'toty'
     const isHeroCard = rarity === 'hero'
-    const isTotsCard = rarity === 'tots'
 
 
     /* -----------------------------------------------------
@@ -682,7 +684,6 @@ export default function PlayerCard({
 
       isHeroCard,
 
-      isTotsCard,
 
       rarity,
 
@@ -706,7 +707,6 @@ export default function PlayerCard({
     overall,
     isIconaCard,
     isHeroCard,
-    isTotsCard,
     rarity,
     automaticRarity,
     form
@@ -827,26 +827,15 @@ export default function PlayerCard({
             {overall}
           </div>
 
+          <div className="fifa-form">
+            <span>FORMA</span>
+            <strong>{form}</strong>
+          </div>
 
           <div
             className="fifa-position"
           >
             {positionShort}
-          </div>
-
-
-          <div
-            className="fifa-form"
-          >
-
-            <span>
-              FORM
-            </span>
-
-            <strong>
-              {form}
-            </strong>
-
           </div>
 
         </div>
@@ -945,20 +934,7 @@ export default function PlayerCard({
         <div
           className="fifa-card-footer"
         >
-
-          <span>
-            {player?.preferred_foot || '—'}
-          </span>
-
-          <span>
-            {player?.play_style || 'Completo'}
-          </span>
-
-          <span>
-            {player?.height_cm
-              ? `${player.height_cm} CM`
-              : '—'}
-          </span>
+          <span>{player?.play_style || 'Completo'}</span>
 
         </div>
 

@@ -6804,7 +6804,7 @@ a:focus-visible,
   .pitch-six-yard { width: 4%; height: 20%; }
 }
 
-/* Hero and TOTS card looks can be selected without changing player ratings. */
+/* Hero card look can be selected without changing player ratings. */
 .fifa-card-hero {
   --card-light: #ffbd7a;
   --card-mid: #a43756;
@@ -6824,32 +6824,12 @@ a:focus-visible,
 .fifa-card-hero .fifa-card-glow { background: radial-gradient(ellipse, rgba(204,82,130,.28), transparent 68%); filter: blur(28px); }
 .fifa-card-hero .fifa-overall,.fifa-card-hero .fifa-position,.fifa-card-hero .fifa-player-name,.fifa-card-hero .fifa-stat { color: #ffe3b6; }
 
-.fifa-card-tots {
-  --card-light: #c5ffe0;
-  --card-mid: #37a984;
-  --card-dark: #123e45;
-  --card-accent: #b8f7d6;
-  --card-text: #e8fff2;
-  box-shadow: 0 32px 75px rgba(0,0,0,.48), 0 0 42px rgba(77,222,165,.2);
-}
-
-.fifa-card-tots .fifa-card-inner {
-  background: radial-gradient(ellipse at 20% 12%, rgba(198,255,226,.27), transparent 32%), linear-gradient(145deg, #236f63 0%, #174e55 46%, #142c45 100%);
-}
-
-.fifa-card-tots .fifa-card-inner::before { border-color: rgba(192,255,219,.75); box-shadow: inset 0 0 26px rgba(101,236,173,.1); }
-.fifa-card-tots .fifa-card-inner::after { border-color: rgba(205,255,225,.3); }
-.fifa-card-tots .fifa-card-shine { background: radial-gradient(ellipse 48% 30% at 72% 13%, rgba(196,255,222,.45), transparent 72%); opacity: .7; }
-.fifa-card-tots .fifa-card-glow { background: radial-gradient(ellipse, rgba(64,223,162,.27), transparent 68%); filter: blur(28px); }
-.fifa-card-tots .fifa-overall,.fifa-card-tots .fifa-position,.fifa-card-tots .fifa-player-name,.fifa-card-tots .fifa-stat { color: #d4ffe5; }
-
 /* Special editions inspired by collectible football cards: shield silhouette,
    layered foil and stronger color contrast. These rules affect presentation only. */
 .fifa-card-totw .fifa-card-inner,
 .fifa-card-toty .fifa-card-inner,
 .fifa-card-prime .fifa-card-inner,
-.fifa-card-hero .fifa-card-inner,
-.fifa-card-tots .fifa-card-inner {
+.fifa-card-hero .fifa-card-inner {
   clip-path: polygon(50% 0%, 58% 3.2%, 67% 1.7%, 76% 5.5%, 100% 11%, 97.5% 88%, 89% 94%, 50% 100%, 11% 94%, 2.5% 88%, 0% 11%, 24% 5.5%, 33% 1.7%, 42% 3.2%);
   border-radius: 0;
 }
@@ -6884,7 +6864,7 @@ a:focus-visible,
 .fifa-card-toty .fifa-card-inner {
   background:
     linear-gradient(180deg, rgba(5, 16, 43, .12), rgba(4, 13, 36, .03) 48%, rgba(3, 10, 31, .35)),
-    url('/cards/card-toty-blue.jpg') center 50% / cover no-repeat;
+    url('/cards/card-toty.webp') center 50% / cover no-repeat;
 }
 
 .fifa-card-toty .fifa-card-inner::before {
@@ -6901,33 +6881,31 @@ a:focus-visible,
 .fifa-card-prime .fifa-card-inner {
   background:
     linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 48%, rgba(167,126,54,.06)),
-    url('/cards/card-icona-marble.png') center 50% / cover no-repeat;
+    url('/cards/card-icon.webp') center 50% / cover no-repeat;
 }
 
 .fifa-card-prime .fifa-card-rating {
   top: 10.5%;
   left: 12%;
   width: 20%;
-  height: 15%;
   justify-content: center;
 }
 
 .fifa-card-prime .fifa-overall { font-size: 46px; letter-spacing: -3px; }
 .fifa-card-prime .fifa-position { margin-top: 5px; font-size: 12px; }
-.fifa-card-prime .fifa-form { display: none; }
 .fifa-card-prime .fifa-player-name { top: 66.5%; }
 
-.fifa-card-totw .fifa-card-inner::before,.fifa-card-toty .fifa-card-inner::before,.fifa-card-prime .fifa-card-inner::before,.fifa-card-hero .fifa-card-inner::before,.fifa-card-tots .fifa-card-inner::before { inset: 8px; clip-path: inherit; border: 2px solid rgba(255,255,255,.7); border-radius: 0; }
+.fifa-card-totw .fifa-card-inner::before,.fifa-card-toty .fifa-card-inner::before,.fifa-card-prime .fifa-card-inner::before,.fifa-card-hero .fifa-card-inner::before { inset: 8px; clip-path: inherit; border: 2px solid rgba(255,255,255,.7); border-radius: 0; }
 .fifa-card-toty .fifa-card-inner::before { border-color: rgba(177, 225, 255, .86); box-shadow: inset 0 0 24px rgba(56,174,255,.18), 0 0 10px rgba(79,180,255,.2); }
-.fifa-card-totw .fifa-card-inner::after,.fifa-card-toty .fifa-card-inner::after,.fifa-card-prime .fifa-card-inner::after,.fifa-card-hero .fifa-card-inner::after,.fifa-card-tots .fifa-card-inner::after { inset: 15px; clip-path: inherit; border-color: rgba(239,205,123,.62); border-radius: 0; }
-.fifa-card-totw .fifa-card-shine,.fifa-card-toty .fifa-card-shine,.fifa-card-prime .fifa-card-shine,.fifa-card-hero .fifa-card-shine,.fifa-card-tots .fifa-card-shine { animation: card-foil-pulse 5s ease-in-out infinite alternate; }
+.fifa-card-totw .fifa-card-inner::after,.fifa-card-toty .fifa-card-inner::after,.fifa-card-prime .fifa-card-inner::after,.fifa-card-hero .fifa-card-inner::after { inset: 15px; clip-path: inherit; border-color: rgba(239,205,123,.62); border-radius: 0; }
+.fifa-card-totw .fifa-card-shine,.fifa-card-toty .fifa-card-shine,.fifa-card-prime .fifa-card-shine,.fifa-card-hero .fifa-card-shine { animation: card-foil-pulse 5s ease-in-out infinite alternate; }
 
 @keyframes card-foil-pulse {
   from { opacity: .36; filter: saturate(.9); }
   to { opacity: .78; filter: saturate(1.35); }
 }
 
-.fifa-card-hero-label,.fifa-card-tots-label {
+.fifa-card-hero-label {
   position: absolute;
   z-index: 24;
   top: 27px;
@@ -6943,8 +6921,6 @@ a:focus-visible,
   box-shadow: 0 3px 12px rgba(0,0,0,.22);
 }
 
-.fifa-card-tots-label { background: linear-gradient(135deg, #e5ffed, #9ee9c0); color: #145542; }
-
 .card-style-picker { min-width: 0; margin: 4px 0; padding: 15px; border: 1px solid var(--border); border-radius: 16px; }
 .card-style-picker legend { padding: 0 7px; color: var(--text); font-weight: 850; }
 .card-style-picker > p { margin: 0 0 12px; font-size: 12px; }
@@ -6959,9 +6935,14 @@ a:focus-visible,
 .card-style-swatch-bronze { background: linear-gradient(145deg,#f0b27c,#683419); }
 .card-style-swatch-totw { background: linear-gradient(145deg,#2e2b22,#050505 60%,#caa94e); }
 .card-style-swatch-toty { background: linear-gradient(145deg,#2d789e,#071b31 65%,#d9bc55); }
-.card-style-swatch-tots { background: linear-gradient(145deg,#a9f4c7,#14524e 65%,#d9fff0); }
 .card-style-swatch-hero { background: linear-gradient(145deg,#ffd08a,#75375f 55%,#20233e); }
 .card-style-swatch-prime { background: linear-gradient(145deg,#fff,#d5dce4 62%,#a67625); }
+.card-style-swatch-totw { background: url('/cards/card-if.webp') center / cover no-repeat; }
+.card-style-swatch-toty { background: url('/cards/card-toty.webp') center / cover no-repeat; }
+.card-style-swatch-hero { background: url('/cards/card-hero.webp') center / cover no-repeat; }
+.card-style-swatch-prime { background: url('/cards/card-icon.webp') center / cover no-repeat; }
+.card-style-swatch-futurestar { background: url('/cards/card-future-star.webp') center / cover no-repeat; }
+.card-style-swatch-shape { background: url('/cards/card-shape.webp') center / cover no-repeat; }
 .card-style-option-copy { display: grid; min-width: 0; gap: 3px; }
 .card-style-option-copy strong { font-size: 12px; }
 .card-style-option-copy small { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
@@ -7012,20 +6993,18 @@ a:focus-visible,
 .fifa-card-hero .fifa-card-inner {
   background:
     linear-gradient(180deg, rgba(4,8,31,.06), rgba(5,9,32,.02) 64%, rgba(16,13,24,.14)),
-    url('/cards/card-hero-neon.png') center 50% / cover no-repeat;
+    url('/cards/card-hero.webp') center 50% / cover no-repeat;
 }
 
 .fifa-card-hero .fifa-card-rating {
   top: 10.5%;
   left: 12%;
   width: 20%;
-  height: 15%;
   justify-content: center;
 }
 
 .fifa-card-hero .fifa-overall { font-size: 46px; letter-spacing: -3px; }
 .fifa-card-hero .fifa-position { margin-top: 5px; font-size: 12px; }
-.fifa-card-hero .fifa-form { display: none; }
 .fifa-card-hero .fifa-player-name { top: 66.5%; }
 .fifa-card-hero .fifa-card-hero-label { top: 4%; left: 50%; right: auto; transform: translateX(-50%); padding: 4px 9px; }
 .fifa-card-hero .fifa-stats { text-shadow: 0 2px 7px rgba(10,8,20,.9); }
@@ -7048,7 +7027,7 @@ a:focus-visible,
 .fifa-card-totw .fifa-card-inner {
   background:
     linear-gradient(180deg, rgba(5,5,8,.05), rgba(5,5,8,0) 62%, rgba(5,5,8,.12)),
-    url('/cards/card-totw-black-gold.png') center 50% / cover no-repeat;
+    url('/cards/card-if.webp') center 50% / cover no-repeat;
 }
 
 .fifa-card-totw .fifa-player-name { top: 66.5%; left: 16%; right: 16%; }
@@ -7094,35 +7073,218 @@ a:focus-visible,
 .fifa-card-style-label-gold { background: linear-gradient(135deg,#fff1a8,#c38b25); color: #44310c; }
 .fifa-card-style-label-totw { border-color: rgba(255,220,137,.84); background: linear-gradient(135deg,#fff0bd,#b88829); color: #241a08; }
 .fifa-card-style-label-toty { border-color: rgba(190,234,255,.9); background: linear-gradient(135deg,#f4fdff,#88d9ff); color: #113b55; }
-.fifa-card-style-label-tots { background: linear-gradient(135deg,#e5ffed,#9ee9c0); color: #145542; }
+.fifa-card-style-label-futurestar { border-color: rgba(220,255,128,.85); background: linear-gradient(135deg,#eeffab,#9b59ff 75%,#4520a0); color: #211044; }
+.fifa-card-style-label-shape { border-color: rgba(134,255,213,.8); background: linear-gradient(135deg,#d4ffe9,#38c9a5 70%,#087c6c); color: #063d36; }
 .fifa-card-style-label-hero { border-color: rgba(255,197,124,.8); background: linear-gradient(135deg,#ffe2a4,#ff9c68 54%,#dc65d8); color: #24123e; }
 .fifa-card-style-label-prime { border-color: rgba(148,102,21,.45); background: linear-gradient(135deg,#fff9df,#e8d094); color: #76500e; }
 
 /* The two metallic designs have a compact rating area. */
 .fifa-card-toty .fifa-overall,
 .fifa-card-totw .fifa-overall { font-size: 42px; letter-spacing: -3px; }
-.fifa-card-toty .fifa-card-rating,
-.fifa-card-totw .fifa-card-rating,
-.fifa-card-tots .fifa-card-rating { top: 42px; }
-
-/* TOTS emerald artwork with the live surname on its gold nameplate. */
-.fifa-card-tots .fifa-card-inner {
+/* Future Stars and Shapeshifters artwork. */
+.fifa-card-futurestar {
+  --card-light: #dbff7a;
+  --card-mid: #751fdb;
+  --card-dark: #110935;
+  --card-accent: #ff4cac;
+  --card-text: #fff8ff;
+}
+.fifa-card-futurestar .fifa-card-inner {
   background:
-    linear-gradient(180deg, rgba(3,25,21,.03), rgba(3,25,21,0) 62%, rgba(2,22,18,.12)),
-    url('/cards/card-tots-emerald.png') center 50% / cover no-repeat;
+    linear-gradient(180deg, rgba(13,5,37,.05), rgba(13,5,37,.02) 62%, rgba(13,5,37,.2)),
+    url('/cards/card-future-star.webp') center 50% / cover no-repeat;
+}
+.fifa-card-futurestar .fifa-overall,
+.fifa-card-futurestar .fifa-position,
+.fifa-card-futurestar .fifa-player-name,
+.fifa-card-futurestar .fifa-stat { color: #fff; text-shadow: 0 2px 8px rgba(12,3,37,.9); }
+.fifa-card-futurestar .fifa-card-shine { background: linear-gradient(125deg, transparent 34%, rgba(237,255,169,.22) 48%, transparent 60%); }
+
+.fifa-card-shape {
+  --card-light: #81f5d0;
+  --card-mid: #148c79;
+  --card-dark: #063c37;
+  --card-accent: #ff7f9e;
+  --card-text: #f4fff9;
+}
+.fifa-card-shape .fifa-card-inner {
+  background:
+    linear-gradient(180deg, rgba(1,39,34,.04), rgba(1,39,34,.02) 62%, rgba(1,39,34,.2)),
+    url('/cards/card-shape.webp') center 50% / cover no-repeat;
+}
+.fifa-card-shape .fifa-overall,
+.fifa-card-shape .fifa-position,
+.fifa-card-shape .fifa-player-name,
+.fifa-card-shape .fifa-stat { color: #f4fff9; text-shadow: 0 2px 8px rgba(0,39,33,.9); }
+.fifa-card-shape .fifa-card-shine { background: linear-gradient(125deg, transparent 34%, rgba(120,255,217,.2) 48%, transparent 60%); }
+
+/* Hero artwork: keep the supplied shield clean and let its own edge define the card. */
+.fifa-card-hero {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 16px 22px rgba(30, 10, 48, .52));
 }
 
-.fifa-card-tots .fifa-player-name { top: 66.5%; left: 16%; right: 16%; }
-.fifa-card-tots .fifa-player-name strong {
-  max-width: 100%;
+.fifa-card-hero:hover { box-shadow: none; }
+
+.fifa-card-hero .fifa-card-inner {
   overflow: hidden;
+  clip-path: none;
+  border-radius: 0;
+  background: url('/cards/card-hero.webp') center / 100% 100% no-repeat;
+}
+
+.fifa-card-hero .fifa-card-inner::before,
+.fifa-card-hero .fifa-card-inner::after,
+.fifa-card-hero .fifa-card-noise { display: none; }
+
+.fifa-card-hero .fifa-player-image {
+  top: 7.5%;
+  left: 14%;
+  right: 14%;
+  width: auto;
+  height: 58%;
+  justify-content: center;
+}
+
+.fifa-card-hero .fifa-player-photo {
+  width: 100%;
+  height: 100%;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 76%, rgba(0,0,0,.72) 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 76%, rgba(0,0,0,.72) 90%, transparent 100%);
+}
+
+.fifa-card-hero .fifa-player-photo .avatar {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+  object-position: center top;
+  transform: none;
+  filter: drop-shadow(0 5px 12px rgba(4, 7, 24, .36));
+}
+
+.fifa-card-hero:hover .fifa-player-photo .avatar { transform: none; }
+
+/* Shared player layout: keep the portrait, surname and attributes inside every edition. */
+.fifa-card .fifa-player-image {
+  top: 6%;
+  right: 5%;
+  left: auto;
+  width: 66%;
+  height: 52%;
+  justify-content: center;
+}
+
+.fifa-card .fifa-player-photo {
+  width: 100%;
+  height: 100%;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 78%, rgba(0,0,0,.68) 91%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 78%, rgba(0,0,0,.68) 91%, transparent 100%);
+}
+
+.fifa-card .fifa-player-photo .avatar {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+  object-position: center top;
+  transform: none;
+}
+
+.fifa-card:hover .fifa-player-photo .avatar { transform: none; }
+
+.fifa-card .fifa-player-name {
+  top: 62.5%;
+  left: 12%;
+  right: 12%;
+}
+
+.fifa-card .fifa-player-name strong {
+  display: block;
+  max-width: 100%;
   margin-top: 0;
-  color: #173e34;
-  font-size: min(23px, var(--card-surname-font-size, 28px));
+  overflow: hidden;
+  font-size: min(23px, var(--card-surname-font-size, 23px));
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 1px 1px rgba(245,255,222,.65);
+}
+
+.fifa-card .fifa-divider { top: 69%; left: 11%; right: 11%; }
+
+.fifa-card .fifa-stats {
+  top: 71.5%;
+  left: 12%;
+  right: 12%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+  row-gap: 4px;
+  justify-items: end;
+}
+
+.fifa-card .fifa-stat { min-width: 0; justify-content: flex-end; gap: 5px; }
+.fifa-card .fifa-stat strong { flex: 0 0 28px; width: 28px; }
+.fifa-card .fifa-stat span { min-width: 0; }
+
+.fifa-card .fifa-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  right: 14%;
+  bottom: 5.5%;
+  left: 14%;
+  height: 5%;
+  padding: 0;
+  border-top: 0;
+  font-size: 9px;
+  letter-spacing: .08em;
+  opacity: .9;
+}
+
+.fifa-card .fifa-card-footer span { justify-content: center; padding: 0 3px; }
+
+.fifa-card .fifa-form {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 3px 6px;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.fifa-card .fifa-form strong { font-size: 10px; }
+.fifa-card .fifa-position { margin-top: 5px; }
+
+.fifa-card .fifa-overall {
+  font-size: 68px;
+  text-shadow: 0 1px 0 rgba(255,255,255,.55), 0 3px 0 rgba(0,0,0,.22), 0 8px 14px rgba(0,0,0,.48);
+  transform: translateZ(8px);
+}
+
+.fifa-card-toty .fifa-overall,
+.fifa-card-totw .fifa-overall { font-size: 46px; }
+.fifa-card-hero .fifa-overall,
+.fifa-card-prime .fifa-overall { font-size: 50px; }
+
+/* Icone get a larger, centered portrait; every other style uses the compact right-side portrait. */
+.fifa-card-prime .fifa-player-image {
+  top: 6%;
+  right: 10%;
+  left: 10%;
+  width: auto;
+  height: 62%;
+}
+
+.fifa-card-prime .fifa-player-photo { width: 100%; height: 100%; }
+.fifa-card-prime .fifa-player-photo .avatar { width: 100% !important; height: 100% !important; }
+
+@media (max-width: 600px) {
+  .fifa-card .fifa-overall { font-size: 60px; }
+  .fifa-card-toty .fifa-overall,
+  .fifa-card-totw .fifa-overall { font-size: 42px; }
+  .fifa-card-hero .fifa-overall,
+  .fifa-card-prime .fifa-overall { font-size: 48px; }
 }
 
 /* Goal entry: clear labels and thumb-friendly controls, especially on phones. */
@@ -7153,9 +7315,6 @@ a:focus-visible,
   .fifa-card-style-label { top: 4.5%; padding: 3px 8px; font-size: 8px; }
   .fifa-card-toty .fifa-overall,
   .fifa-card-totw .fifa-overall { font-size: 38px; letter-spacing: -2.5px; }
-  .fifa-card-toty .fifa-card-rating,
-  .fifa-card-totw .fifa-card-rating,
-  .fifa-card-tots .fifa-card-rating { top: 35px; }
 }
 
 /* Keep mobile navigation items stacked and scrollable on narrow screens. */
