@@ -47,7 +47,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'prompt',
-        includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
+        includeAssets: ['icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png'],
         workbox: {
           globIgnores: ['**/*.wasm'],
           importScripts: ['/push-sw.js']
