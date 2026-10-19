@@ -318,7 +318,7 @@ export default function MatchForm() {
 
   async function buildTeamsWithAssistant() {
     const roster = f.participants
-    const prompt = assistantPrompt.trim() || 'Dividi i giocatori in due squadre equilibrate, considerando ruolo e rendimento medio.'
+    const prompt = assistantPrompt.trim() || 'Dividi i giocatori in due squadre equilibrate, considerando statistiche, ruolo, forma recente e abbinamenti storici.'
     if (roster.length !== max * 2) {
       setAssistantMessage(`Aggiungi ${max * 2 - roster.length} giocatori per completare entrambe le squadre.`)
       return
@@ -328,6 +328,30 @@ export default function MatchForm() {
     setAssistantBusy(true)
     setAssistantMessage('')
     try {
+      const selectedPlayerIds = new Set(roster.map(player => player.player_id).filter(Boolean))
+      const history = matches
+        .filter(match => match.status === 'played' && match.score_a != null && match.score_b != null)
+        .sort((first, second) => Date.parse(second.kickoff) - Date.parse(first.kickoff))
+        .slice(0, 100)
+        .map(match => ({
+          kickoff: match.kickoff,
+          scoreA: match.score_a,
+          scoreB: match.score_b,
+          players: (match.match_players || [])
+            .filter(player => selectedPlayerIds.has(player.player_id))
+            .map(player => ({
+              playerId: player.player_id,
+              team: player.team,
+              rating: player.rating
+            })),
+          goals: (match.goals || [])
+            .filter(goal => !goal.own_goal && (selectedPlayerIds.has(goal.scorer_id) || selectedPlayerIds.has(goal.assist_id)))
+            .map(goal => ({
+              scorerId: goal.scorer_id,
+              assistId: goal.assist_id,
+              ownGoal: goal.own_goal
+            }))
+        }))
       const response = await fetch('/api/build-squads', {
         method: 'POST',
         headers: {
@@ -343,14 +367,18 @@ export default function MatchForm() {
             return {
               id: p.key,
               name: participantName(p),
+              playerId: player?.id || null,
               position: player?.position || 'Non specificato',
               role: player?.role_label || '',
               averageRating: stats?.media_voto ?? null,
+              ratingVotes: stats?.valutazioni ?? 0,
               goals: stats?.gol ?? 0,
               assists: stats?.assist ?? 0,
-              games: stats?.presenze ?? 0
+              games: stats?.presenze ?? 0,
+              mvp: stats?.mvp ?? 0
             }
-          })
+          }),
+          history
         })
       })
       const responseText = await response.text()

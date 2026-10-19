@@ -51,7 +51,7 @@ Calcetto Club è una web app privata per organizzare le partite del proprio grup
 
 ### Assistente AI e aggiornamenti
 
-- Assistente per bilanciare le squadre in base ai dati disponibili, ai ruoli e alle indicazioni scritte dall’utente. Le proposte restano modificabili.
+- Assistente per bilanciare le squadre usando voti, presenze, gol, assist, MVP, forma recente, ruoli e risultati delle coppie nelle partite precedenti. Lo storico viene pesato in base al numero di incontri e le proposte restano modificabili.
 - Aggiornamento PWA con avviso: quando è disponibile una nuova versione, l’utente sceglie quando ricaricare la pagina.
 
 ## Tecnologie
@@ -142,7 +142,8 @@ Nel progetto Supabase:
 12. Esegui `supabase/match-polls.sql` per creare i sondaggi. Fallo dopo le migrazioni delle notifiche: `notification-messages-and-cancellations.sql`, `match-roster-update-notifications.sql` e `match-reminders.sql`.
 13. Esegui `supabase/notification-retention.sql` per mostrare nell’app solo le ultime 48 ore e rimuovere automaticamente le notifiche più vecchie.
 14. Esegui `supabase/match-poll-expiration.sql` per eliminare i sondaggi a un’ora dalla partita; richiede `pg_cron`, abilitato da `match-reminders.sql`.
-15. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
+15. Esegui `supabase/performance-indexes.sql` per aggiungere indici alle query dei promemoria, delle statistiche, della pulizia notifiche e delle foreign key.
+16. Dopo aver configurato le variabili Vercel, fai un nuovo deploy. Ogni utente deve aprire la campanella e premere **Attiva** sul dispositivo da cui desidera ricevere le push.
 
 Su iPhone il sito deve essere aggiunto alla schermata Home e le notifiche consentite; il Web Push per le web app su iOS richiede iOS 16.4 o successivo. Su Android si può attivare dal sito nel browser compatibile.
 
