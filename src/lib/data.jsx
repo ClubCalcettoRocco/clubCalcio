@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from './supabase'
-import { ActionError, Spinner } from '../components/ui'
 import { useAuth } from './auth'
 import { explainError } from './errorMessage'
 
@@ -15,36 +14,57 @@ export function DataProvider({ children }) {
     loading: true,
     error: null
   })
+  const requestRef = useRef({ admin: null, promise: null })
+  const requestIdRef = useRef(0)
 
   const reload = useCallback(async () => {
+    if (requestRef.current.promise && requestRef.current.admin === isAdmin) {
+      return requestRef.current.promise
+    }
+
+    const requestId = ++requestIdRef.current
+    const promise = (async () => {
+      try {
+        const playersQuery = isAdmin
+          ? supabase.rpc('admin_list_players')
+          : supabase
+            .from('players')
+            .select('id,first_name,last_name,photo_url,role_label,approved,position,preferred_foot,play_style,height_cm,weight_kg,card_style')
+            .order('first_name')
+
+        const [p, s, m] = await Promise.all([
+          playersQuery,
+          supabase.from('player_stats').select('*').order('gol', { ascending: false }),
+          supabase.from('matches').select('*, match_players(*), goals(*)').order('kickoff', { ascending: false })
+        ])
+
+        if (requestId !== requestIdRef.current) return
+
+        const err = p.error || s.error || m.error
+        setState({
+          players: p.data || [],
+          stats: s.data || [],
+          matches: m.data || [],
+          loading: false,
+          error: err ? explainError(err, 'Non è stato possibile caricare i dati.') : null
+        })
+      } catch (err) {
+        if (requestId !== requestIdRef.current) return
+        setState(current => ({
+          ...current,
+          loading: false,
+          error: explainError(err, 'Non è stato possibile caricare i dati.')
+        }))
+      }
+    })()
+
+    requestRef.current = { admin: isAdmin, promise }
     try {
-      const playersQuery = isAdmin
-        ? supabase.rpc('admin_list_players')
-        : supabase
-          .from('players')
-          .select('id,first_name,last_name,photo_url,role_label,approved,position,preferred_foot,play_style,height_cm,weight_kg,card_style')
-          .order('first_name')
-
-      const [p, s, m] = await Promise.all([
-        playersQuery,
-        supabase.from('player_stats').select('*').order('gol', { ascending: false }),
-        supabase.from('matches').select('*, match_players(*), goals(*)').order('kickoff', { ascending: false })
-      ])
-
-      const err = p.error || s.error || m.error
-      setState({
-        players: p.data || [],
-        stats: s.data || [],
-        matches: m.data || [],
-        loading: false,
-        error: err ? explainError(err, 'Non è stato possibile caricare i dati.') : null
-      })
-    } catch (err) {
-      setState(current => ({
-        ...current,
-        loading: false,
-        error: explainError(err, 'Non è stato possibile caricare i dati.')
-      }))
+      return await promise
+    } finally {
+      if (requestRef.current.promise === promise) {
+        requestRef.current = { admin: null, promise: null }
+      }
     }
   }, [isAdmin])
 
@@ -53,13 +73,29 @@ export function DataProvider({ children }) {
   }, [reload])
 
   useEffect(() => {
+    let timer
+    const queueReload = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        const pending = requestRef.current.promise
+        if (pending) {
+          pending.then(reload, reload)
+          return
+        }
+        reload()
+      }, 180)
+    }
+
     const channel = supabase
       .channel('club-matches-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, reload)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players' }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, queueReload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players' }, queueReload)
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      window.clearTimeout(timer)
+      supabase.removeChannel(channel)
+    }
   }, [reload])
 
   const playersById = useMemo(
@@ -76,34 +112,21 @@ export function DataProvider({ children }) {
     [state.stats]
   )
 
-  if (state.loading) {
-    return <Spinner label="Caricamento dati…" />
-  }
-
-  if (state.error) {
-    return (
-      <div className="center page-pad">
-        <div className="card data-error-card">
-          <h2>Non riesco a caricare il club</h2>
-          <ActionError message={state.error} onRetry={reload} />
-        </div>
-      </div>
-    )
-  }
+  const value = useMemo(() => ({
+    ...state,
+    playersById,
+    statsById,
+    reload
+  }), [state, playersById, statsById, reload])
 
   return (
-    <DataCtx.Provider
-      value={{
-        ...state,
-        playersById,
-        statsById,
-        reload
-      }}
-    >
+    <DataCtx.Provider value={value}>
       {children}
     </DataCtx.Provider>
   )
 }
 
-export const useData = () => useContext(DataCtx)
+export function useData() {
+  return useContext(DataCtx)
+}
 

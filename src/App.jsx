@@ -16,6 +16,7 @@ import {
 import { DataProvider } from './lib/data'
 
 import Layout from './components/Layout'
+import DataGate from './components/DataGate'
 
 import { ActionError, Spinner } from './components/ui'
 import PwaUpdatePrompt from './components/PwaUpdatePrompt'
@@ -122,9 +123,11 @@ function Protected() {
 
   return (
     <DataProvider>
-      <Layout>
-        <Outlet />
-      </Layout>
+      <DataGate>
+        <Layout>
+          <Outlet />
+        </Layout>
+      </DataGate>
     </DataProvider>
   )
 }

@@ -7169,11 +7169,11 @@ a:focus-visible,
 
 /* Shared player layout: keep the portrait, surname and attributes inside every edition. */
 .fifa-card .fifa-player-image {
-  top: 6%;
+  top: 7%;
   right: 5%;
   left: auto;
   width: 66%;
-  height: 52%;
+  height: 49%;
   justify-content: center;
 }
 
@@ -7258,22 +7258,35 @@ a:focus-visible,
 
 .fifa-card .fifa-overall {
   font-size: 68px;
-  text-shadow: 0 1px 0 rgba(255,255,255,.55), 0 3px 0 rgba(0,0,0,.22), 0 8px 14px rgba(0,0,0,.48);
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(12,3,37,.9);
   transform: translateZ(8px);
 }
 
+.fifa-card-toty .fifa-card-rating,
+.fifa-card-totw .fifa-card-rating {
+  top: 8%;
+  left: 9%;
+  width: 24%;
+  align-items: center;
+}
+
 .fifa-card-toty .fifa-overall,
-.fifa-card-totw .fifa-overall { font-size: 46px; }
+.fifa-card-totw .fifa-overall {
+  font-size: 52px;
+  letter-spacing: -2px;
+  line-height: .9;
+}
 .fifa-card-hero .fifa-overall,
 .fifa-card-prime .fifa-overall { font-size: 50px; }
 
 /* Icone get a larger, centered portrait; every other style uses the compact right-side portrait. */
 .fifa-card-prime .fifa-player-image {
-  top: 6%;
+  top: 7%;
   right: 10%;
   left: 10%;
   width: auto;
-  height: 62%;
+  height: 60%;
 }
 
 .fifa-card-prime .fifa-player-photo { width: 100%; height: 100%; }
@@ -7282,7 +7295,7 @@ a:focus-visible,
 @media (max-width: 600px) {
   .fifa-card .fifa-overall { font-size: 60px; }
   .fifa-card-toty .fifa-overall,
-  .fifa-card-totw .fifa-overall { font-size: 42px; }
+  .fifa-card-totw .fifa-overall { font-size: 48px; }
   .fifa-card-hero .fifa-overall,
   .fifa-card-prime .fifa-overall { font-size: 48px; }
 }
@@ -7314,7 +7327,7 @@ a:focus-visible,
 @media (max-width: 560px) {
   .fifa-card-style-label { top: 4.5%; padding: 3px 8px; font-size: 8px; }
   .fifa-card-toty .fifa-overall,
-  .fifa-card-totw .fifa-overall { font-size: 38px; letter-spacing: -2.5px; }
+  .fifa-card-totw .fifa-overall { font-size: 44px; letter-spacing: -1.5px; }
 }
 
 /* Keep mobile navigation items stacked and scrollable on narrow screens. */
@@ -7351,5 +7364,151 @@ a:focus-visible,
   .mobile-nav a {
     flex-basis: 60px;
     min-width: 60px;
+  }
+}
+
+/* Playstyle badges are pinned to the left edge of every player card. */
+.fifa-playstyle {
+  position: absolute;
+  z-index: 40;
+  top: 48%;
+  left: -16px;
+  width: 50px;
+  height: 50px;
+  transform: translateY(-50%);
+}
+
+.fifa-playstyle-trigger {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fifa-playstyle-trigger img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .7)) drop-shadow(0 0 7px rgba(255, 218, 130, .2));
+}
+
+.fifa-playstyle-trigger:focus-visible {
+  outline: 3px solid #fff4bb;
+  outline-offset: 3px;
+}
+
+.fifa-playstyle-info {
+  position: absolute;
+  z-index: 45;
+  top: 50%;
+  left: 42px;
+  width: 218px;
+  padding: 14px 34px 14px 15px;
+  border: 1px solid rgba(242, 204, 112, .68);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(30, 24, 20, .98), rgba(12, 13, 18, .98));
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .08);
+  color: #fff8e8;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(6px, -50%) scale(.97);
+  transform-origin: left center;
+  transition: opacity .18s ease, transform .18s ease;
+  visibility: hidden;
+}
+
+.fifa-playstyle.is-open .fifa-playstyle-info {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, -50%) scale(1);
+  visibility: visible;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fifa-playstyle:hover .fifa-playstyle-info {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(0, -50%) scale(1);
+    visibility: visible;
+  }
+}
+
+.fifa-playstyle-info strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #ffe19a;
+  font-size: 13px;
+  letter-spacing: .045em;
+}
+
+.fifa-playstyle-info p {
+  margin: 0;
+  color: rgba(255, 248, 232, .86);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.fifa-playstyle-close {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.home-player-card-stage {
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+  margin-bottom: 24px;
+  padding: 24px 28px 30px;
+  border: 1px solid var(--border);
+  border-radius: 23px;
+  background:
+    radial-gradient(ellipse at 52% 35%, rgba(202, 157, 69, .12), transparent 44%),
+    linear-gradient(145deg, rgba(28, 18, 22, .72), rgba(13, 9, 11, .82));
+}
+
+.home-player-card-stage .fifa-card {
+  flex: none;
+}
+
+@media (max-width: 500px) {
+  .fifa-playstyle {
+    left: -14px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .fifa-playstyle-info {
+    left: 36px;
+    width: min(218px, calc(100vw - 82px));
+    padding: 12px 32px 12px 13px;
+  }
+
+  .home-player-card-stage {
+    margin-bottom: 20px;
+    padding: 20px 22px 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fifa-playstyle-info {
+    transition: none;
   }
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { Avatar } from './ui'
 
 export const CARD_STYLE_OPTIONS = [
@@ -24,6 +24,173 @@ const CARD_STYLE_LABELS = {
   shape: 'SHAPE',
   hero: 'HERO',
   prime: 'ICONA'
+}
+
+const PLAYSTYLE_DETAILS = {
+  cassaforte: {
+    name: 'Cassaforte',
+    description: 'Rende quasi impossibile sottrarre la sfera mentre protegge palla di spalle. Mantiene l’equilibrio anche sotto la pressione dei difensori più fisici.',
+    image: '/playstyles/safe.webp'
+  },
+  batteria: {
+    name: 'Batteria',
+    description: 'Riduce drasticamente il consumo di resistenza. Mantiene lucidità e reattività anche nei minuti di recupero e ai supplementari.',
+    image: '/playstyles/battery.webp'
+  },
+  lavatrice: {
+    name: 'Lavatrice',
+    description: 'Ha una corsa caratteristica a testa bassa e un baricentro basso, che riduce l’impatto dei contatti laterali mentre accelera.',
+    image: '/playstyles/washer.webp'
+  },
+  rapido: {
+    name: 'Rapido',
+    description: 'Mantiene un’elevata velocità di punta negli allunghi palla al piede e nei tagli senza pallone.',
+    image: '/playstyles/runner.webp'
+  },
+  dribbling: {
+    name: 'Dribbling',
+    description: 'Esegue con fluidità cambi di direzione e finte, rendendo imprevedibile l’uno contro uno.',
+    image: '/playstyles/runner.webp'
+  },
+  primoPasso: {
+    name: 'Razzetto',
+    description: 'Garantisce un’esplosività eccezionale nei primi metri, permettendo di staccare subito il marcatore.',
+    image: '/playstyles/rocket.webp'
+  },
+  procione: {
+    name: 'Ladro',
+    description: 'Aumenta il raggio d’azione per intercettare i passaggi e la capacità di leggere in anticipo le traiettorie.',
+    image: '/playstyles/raccoon.webp'
+  },
+  fortuna: {
+    name: 'Fortuna',
+    description: 'Aumenta la probabilità di vincere rimpalli favorevoli, deviazioni fortunate e giocate decisive.',
+    image: '/playstyles/luck.webp'
+  },
+  tecnica: {
+    name: 'Jolly',
+    description: 'Esegue con fluidità e rapidità cambi di direzione e finte, rendendo imprevedibile l’uno contro uno.',
+    image: '/playstyles/jester.webp'
+  },
+  tiroAGiro: {
+    name: 'Tiro a giro',
+    description: 'Dà effetto e precisione ai tiri dal limite o da posizione defilata, rendendo la traiettoria imprevedibile.',
+    image: '/playstyles/curve-shot.webp'
+  },
+  muscoletto: {
+    name: 'Muscoletto',
+    description: 'Aumenta la forza nei contrasti e la probabilità di vincere i duelli fisici, strappando il pallone agli avversari.',
+    image: '/playstyles/muscle.webp'
+  },
+  scudo: {
+    name: 'Guanto',
+    description: 'Aumenta riflessi e reattività tra i pali, migliora la presa sui tiri potenti e le uscite ravvicinate.',
+    image: '/playstyles/glove.webp'
+  },
+  passaggioEsterno: {
+    name: 'Tiki-Taka',
+    description: 'Aumenta la precisione nei passaggi corti e di prima intenzione e la qualità dei filtranti per servire assist.',
+    image: '/playstyles/arrows.webp'
+  },
+  schiena: {
+    name: 'Panchinaro',
+    description: 'Giocatore con attributi base ridotti, che necessita di minutaggio e allenamento per sbloccare il suo potenziale.',
+    image: '/playstyles/schiena.webp'
+  },
+  tiroPotenza: {
+    name: 'Tiro di potenza',
+    description: 'Scaglia conclusioni potenti, capaci di impensierire il portiere anche dalla distanza.',
+    image: '/playstyles/runner.webp'
+  }
+}
+
+function normalizePlayerName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('it')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function getAssignedPlaystyle(player) {
+  const firstName = normalizePlayerName(player?.first_name)
+  const lastName = normalizePlayerName(player?.last_name)
+  const fullName = normalizePlayerName(`${player?.first_name || ''} ${player?.last_name || ''}`)
+
+  if (fullName.includes('marco oddone')) return PLAYSTYLE_DETAILS.scudo
+  if ((firstName === 'marco c' || fullName === 'marco c') || (firstName === 'marco' && (lastName === 'c' || lastName.startsWith('c ')))) {
+    return PLAYSTYLE_DETAILS.cassaforte
+  }
+
+  if (fullName.includes('alberto ciaglia')) return PLAYSTYLE_DETAILS.dribbling
+  if (fullName.includes('alessandro catalano')) return PLAYSTYLE_DETAILS.cassaforte
+  if (fullName.includes('andrea grossi') || fullName.includes('daniele bonelli')) return PLAYSTYLE_DETAILS.batteria
+  if (fullName.includes('domenico rosa')) return PLAYSTYLE_DETAILS.lavatrice
+  if (fullName.includes('donatello angarola')) return PLAYSTYLE_DETAILS.rapido
+  if (fullName.includes('emanuele di santo')) return PLAYSTYLE_DETAILS.primoPasso
+  if (fullName.includes('gabriele rescigno')) return PLAYSTYLE_DETAILS.procione
+  if (fullName.includes('giuseppe guidone')) return PLAYSTYLE_DETAILS.fortuna
+  if (fullName.includes('giuseppe calderola')) return PLAYSTYLE_DETAILS.tecnica
+  if (fullName.includes('leonardo ciaglia')) return PLAYSTYLE_DETAILS.tiroAGiro
+  if (fullName.includes('loris guglielmi') || fullName.includes('stefano giuzio')) return PLAYSTYLE_DETAILS.muscoletto
+  if (fullName.includes('marco oddone')) return PLAYSTYLE_DETAILS.scudo
+  if (fullName.includes('marco c')) return PLAYSTYLE_DETAILS.cassaforte
+  if (fullName.includes('nazzareno sabia')) return PLAYSTYLE_DETAILS.passaggioEsterno
+  if (fullName.includes('paolo musicante')) return PLAYSTYLE_DETAILS.schiena
+  if (fullName.includes('simone pomarico')) return PLAYSTYLE_DETAILS.tiroPotenza
+
+  return null
+}
+
+function PlaystyleBadge({ playstyle, playerName }) {
+  const [open, setOpen] = useState(false)
+  const descriptionId = useId()
+  const triggerRef = useRef(null)
+
+  if (!playstyle) return null
+
+  return (
+    <div className={`fifa-playstyle${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        className="fifa-playstyle-trigger"
+        aria-label={`Playstyle ${playstyle.name} di ${playerName}. Apri spiegazione`}
+        aria-expanded={open}
+        aria-controls={descriptionId}
+        ref={triggerRef}
+        onClick={() => setOpen(value => !value)}
+        onKeyDown={event => {
+          if (event.key === 'Escape') setOpen(false)
+        }}
+      >
+        <img src={playstyle.image} alt="" loading="lazy" decoding="async" />
+      </button>
+      <div
+        className="fifa-playstyle-info"
+        id={descriptionId}
+        role="dialog"
+        aria-label={`Playstyle ${playstyle.name}`}
+        onBlur={event => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
+        }}
+      >
+        <button
+          type="button"
+          className="fifa-playstyle-close"
+          aria-label="Chiudi spiegazione"
+          onClick={() => {
+            setOpen(false)
+            triggerRef.current?.focus()
+          }}
+        >
+          ×
+        </button>
+        <strong>{playstyle.name}</strong>
+        <p>{playstyle.description}</p>
+      </div>
+    </div>
+  )
 }
 
 
@@ -733,6 +900,8 @@ export default function PlayerCard({
             : '---'
 
   const cardSurname = player?.last_name || player?.first_name || ''
+  const assignedPlaystyle = getAssignedPlaystyle(player)
+  const fullPlayerName = [player?.first_name, player?.last_name].filter(Boolean).join(' ').trim()
   const surnameFontSize = Math.max(
     15,
     Math.min(28, Math.floor(285 / Math.max(cardSurname.length, 1)))
@@ -940,6 +1109,8 @@ export default function PlayerCard({
 
 
       </div>
+
+      <PlaystyleBadge playstyle={assignedPlaystyle} playerName={fullPlayerName || 'giocatore'} />
 
     </div>
   )

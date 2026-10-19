@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
 import { explainError } from './errorMessage'
 
@@ -84,7 +84,41 @@ export function AuthProvider({ children }) {
     }
   }, [session?.user?.id])
 
-  const value = {
+  const signIn = useCallback((email, password) => (
+    supabase.auth.signInWithPassword({ email, password })
+  ), [])
+
+  const signUp = useCallback((email, password, first_name, last_name) => (
+    supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { first_name, last_name } }
+    })
+  ), [])
+
+  const signOut = useCallback(() => supabase.auth.signOut(), [])
+
+  const refreshMe = useCallback(async () => {
+    if (!session?.user?.id) return null
+
+    setProfileError('')
+    try {
+      const { data, error } = await supabase.rpc('get_my_profile')
+      if (error) throw error
+      const next = data ? {
+        ...data,
+        user_id: session.user.id,
+        email: session.user.email || ''
+      } : null
+      setMe(next)
+      return next
+    } catch (error) {
+      setProfileError(explainError(error, 'Non è stato possibile caricare il profilo.'))
+      return null
+    }
+  }, [session?.user?.id, session?.user?.email])
+
+  const value = useMemo(() => ({
     session,
     me,
     loading,
@@ -93,42 +127,11 @@ export function AuthProvider({ children }) {
     isAdmin: me?.app_role === 'ADMIN',
     isApproved: Boolean(me?.approved),
 
-    signIn: (email, password) =>
-      supabase.auth.signInWithPassword({
-        email,
-        password
-      }),
-
-    signUp: (email, password, first_name, last_name) =>
-      supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name,
-            last_name
-          }
-        }
-      }),
-
-    signOut: () => supabase.auth.signOut(),
-
-    refreshMe: async () => {
-      if (!session?.user?.id) return null
-
-      setProfileError('')
-      try {
-        const { data, error } = await supabase.rpc('get_my_profile')
-        if (error) throw error
-        const next = data ? { ...data, user_id: session.user.id, email: session.user.email || '' } : null
-        setMe(next)
-        return next
-      } catch (error) {
-        setProfileError(explainError(error, 'Non è stato possibile caricare il profilo.'))
-        return null
-      }
-    }
-  }
+    signIn,
+    signUp,
+    signOut,
+    refreshMe
+  }), [session, me, loading, profileError, signIn, signUp, signOut, refreshMe])
 
   return (
     <AuthCtx.Provider value={value}>

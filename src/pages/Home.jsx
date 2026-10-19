@@ -10,6 +10,7 @@ import {
 } from '../components/ui'
 import { useAuth } from '../lib/auth'
 import { TYPES, fmtDate, fmtTime, fmt1 } from '../lib/util'
+import PlayerCard from '../components/PlayerCard'
 
 export default function Home() {
   const { matches, stats, playersById } = useData()
@@ -118,6 +119,22 @@ export default function Home() {
         </div>
 
       </section>
+
+      {me && (
+        <Section
+          title="La tua carta"
+          action={<Link to={`/giocatori/${me.id}`} className="link">Il tuo profilo →</Link>}
+        >
+          <div className="home-player-card-stage">
+            <PlayerCard
+              player={me}
+              stats={myStats}
+              matches={matches}
+              playerId={me.id}
+            />
+          </div>
+        </Section>
+      )}
 
       {/* =========================
           STATISTICHE

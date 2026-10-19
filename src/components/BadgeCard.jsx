@@ -35,6 +35,8 @@ export default function BadgeCard({
           src={badge.image}
           alt={badge.name}
           className="badge-image"
+          loading="lazy"
+          decoding="async"
         />
 
         {!unlocked && (

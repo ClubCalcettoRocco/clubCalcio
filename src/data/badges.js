@@ -784,7 +784,7 @@ export const BADGES = [
     name: 'Primo Gol',
     category: 'Gol',
     description: 'Segna il tuo primo gol.',
-    image: '/badges/primo-gol.png',
+    image: '/badges/primo-gol.webp',
 
     target: 1,
 
@@ -809,7 +809,7 @@ export const BADGES = [
     name: 'Bomber',
     category: 'Gol',
     description: 'Segna almeno 10 gol.',
-    image: '/badges/bomber.png',
+    image: '/badges/bomber.webp',
 
     target: 10,
 
@@ -834,7 +834,7 @@ export const BADGES = [
     name: 'Cannoniere',
     category: 'Gol',
     description: 'Segna almeno 25 gol.',
-    image: '/badges/cannoniere.png',
+    image: '/badges/cannoniere.webp',
 
     target: 25,
 
@@ -859,7 +859,7 @@ export const BADGES = [
     name: 'Rapace',
     category: 'Gol',
     description: 'Realizza una tripletta.',
-    image: '/badges/rapace.png',
+    image: '/badges/rapace.webp',
 
     target: 1,
 
@@ -879,7 +879,7 @@ export const BADGES = [
     name: 'Assistman',
     category: 'Assist',
     description: 'Realizza almeno 10 assist.',
-    image: '/badges/assistman.png',
+    image: '/badges/assistman.webp',
 
     target: 10,
 
@@ -904,7 +904,7 @@ export const BADGES = [
     name: 'Playmaker',
     category: 'Assist',
     description: 'Realizza almeno 25 assist.',
-    image: '/badges/playmaker.png',
+    image: '/badges/playmaker.webp',
 
     target: 25,
 
@@ -929,7 +929,7 @@ export const BADGES = [
     name: 'Regista',
     category: 'Assist',
     description: 'Realizza 3 assist nella stessa partita.',
-    image: '/badges/regista.png',
+    image: '/badges/regista.webp',
 
     target: 1,
 
@@ -951,7 +951,7 @@ export const BADGES = [
     name: 'MVP',
     category: 'Prestazioni',
     description: 'Vinci il premio MVP per la prima volta.',
-    image: '/badges/mvp.png',
+    image: '/badges/mvp.webp',
 
     target: 1,
 
@@ -976,7 +976,7 @@ export const BADGES = [
     name: 'Uomo Partita',
     category: 'Prestazioni',
     description: 'Ottieni almeno 5 MVP.',
-    image: '/badges/uomo-partita.png',
+    image: '/badges/uomo-partita.webp',
 
     target: 5,
 
@@ -1001,7 +1001,7 @@ export const BADGES = [
     name: 'Fenomeno',
     category: 'Prestazioni',
     description: 'Ottieni almeno 10 MVP.',
-    image: '/badges/fenomeno.png',
+    image: '/badges/fenomeno.webp',
 
     target: 10,
 
@@ -1026,7 +1026,7 @@ export const BADGES = [
     name: '7+',
     category: 'Prestazioni',
     description: 'Mantieni una media voto di almeno 7.',
-    image: '/badges/7-plus.png',
+    image: '/badges/7-plus.webp',
 
     target: 7,
 
@@ -1048,7 +1048,7 @@ export const BADGES = [
     name: 'Esordiente',
     category: 'Presenze',
     description: 'Gioca la tua prima partita.',
-    image: '/badges/esordiente.png',
+    image: '/badges/esordiente.webp',
 
     target: 1,
 
@@ -1073,7 +1073,7 @@ export const BADGES = [
     name: 'Veterano',
     category: 'Presenze',
     description: 'Raggiungi 15 presenze.',
-    image: '/badges/veterano.png',
+    image: '/badges/veterano.webp',
 
     target: 15,
 
@@ -1098,7 +1098,7 @@ export const BADGES = [
     name: 'Bandiera',
     category: 'Presenze',
     description: 'Raggiungi 30 presenze.',
-    image: '/badges/bandiera.png',
+    image: '/badges/bandiera.webp',
 
     target: 30,
 
@@ -1123,7 +1123,7 @@ export const BADGES = [
     name: 'Fedelissimo',
     category: 'Presenze',
     description: 'Raggiungi 50 presenze.',
-    image: '/badges/fedelissimo.png',
+    image: '/badges/fedelissimo.webp',
 
     target: 50,
 
@@ -1148,7 +1148,7 @@ export const BADGES = [
     name: 'Invincibile',
     category: 'Vittorie',
     description: 'Vinci 5 partite consecutive.',
-    image: '/badges/invincibile.png',
+    image: '/badges/invincibile.webp',
 
     target: 1,
 
@@ -1170,7 +1170,7 @@ export const BADGES = [
     name: 'Clutch',
     category: 'Prestazioni',
     description: 'Segna un gol decisivo in una vittoria.',
-    image: '/badges/clutch.png',
+    image: '/badges/clutch.webp',
 
     target: 1,
 
@@ -1192,7 +1192,7 @@ export const BADGES = [
     name: 'Clean Sheet',
     category: 'Difesa',
     description: 'Vinci una partita senza subire gol.',
-    image: '/badges/clean-sheet.png',
+    image: '/badges/clean-sheet.webp',
 
     target: 1,
 
@@ -1214,7 +1214,7 @@ export const BADGES = [
     name: 'Rimonta',
     category: 'Prestazioni',
     description: 'Rimonta uno svantaggio e vinci la partita.',
-    image: '/badges/rimonta.png',
+    image: '/badges/rimonta.webp',
 
     target: 1,
 
@@ -1236,7 +1236,7 @@ export const BADGES = [
     name: 'Leggenda del Club',
     category: 'PLATINO',
     description: 'Sblocca tutti gli altri badge del club.',
-    image: '/badges/leggenda-del-club.png',
+    image: '/badges/leggenda-del-club.webp',
 
     target: PLATINUM_TARGET,
 
