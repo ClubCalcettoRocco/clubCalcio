@@ -18,6 +18,60 @@ function clamp(value, minimum, maximum) {
   return Math.max(minimum, Math.min(maximum, value))
 }
 
+function parseJsonObject(value) {
+  if (typeof value !== 'string') return null
+  const text = value.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+  try {
+    const parsed = JSON.parse(text)
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed
+  } catch {
+    // Groq may add a short preamble or wrap the JSON in a Markdown code fence.
+  }
+
+  let depth = 0
+  let start = -1
+  let inString = false
+  let escaped = false
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (character === '\\') escaped = true
+      else if (character === '"') inString = false
+      continue
+    }
+    if (character === '"') {
+      inString = true
+      continue
+    }
+    if (character === '{') {
+      if (depth === 0) start = index
+      depth += 1
+    } else if (character === '}' && depth > 0) {
+      depth -= 1
+      if (depth === 0 && start >= 0) {
+        try {
+          const parsed = JSON.parse(text.slice(start, index + 1))
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed
+        } catch {
+          start = -1
+        }
+      }
+    }
+  }
+  return null
+}
+
+function hasValidAssignments(proposal, ids, perTeam) {
+  if (!Array.isArray(proposal?.assignments) || proposal.assignments.length !== ids.length) return false
+  if (proposal.assignments.some(item => !item || typeof item.id !== 'string' || !['A', 'B'].includes(item.team))) return false
+  const assignmentIds = proposal.assignments.map(item => item.id)
+  return new Set(assignmentIds).size === ids.length
+    && assignmentIds.every(id => ids.includes(id))
+    && proposal.assignments.filter(item => item.team === 'A').length === perTeam
+    && proposal.assignments.filter(item => item.team === 'B').length === perTeam
+}
+
 function pairKey(firstId, secondId) {
   return firstId < secondId ? `${firstId}|${secondId}` : `${secondId}|${firstId}`
 }
@@ -393,6 +447,12 @@ export default async function handler(req, res) {
     }))
     const history = sanitizeHistory(req.body?.history, roster)
     const historical = analyzeHistory(history, roster)
+    const model = process.env.GROQ_MODEL || 'openai/gpt-oss-20b'
+    const supportsStrictJsonSchema = [
+      'openai/gpt-oss-20b',
+      'openai/gpt-oss-120b',
+      'qwen/qwen3.8-27b'
+    ].includes(model)
     const recentForm = roster.flatMap(player => {
       const form = player.playerId ? historical.formByPlayerId.get(player.playerId) : null
       if (!form) return []
@@ -414,7 +474,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
+        model,
         reasoning_effort: 'low',
         messages: [
           {
@@ -435,6 +495,35 @@ export default async function handler(req, res) {
             })
           }
         ],
+        response_format: supportsStrictJsonSchema
+          ? {
+              type: 'json_schema',
+              json_schema: {
+                name: 'squad_assignments',
+                strict: true,
+                schema: {
+                  type: 'object',
+                  properties: {
+                    assignments: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          team: { type: 'string', enum: ['A', 'B'] }
+                        },
+                        required: ['id', 'team'],
+                        additionalProperties: false
+                      }
+                    },
+                    explanation: { type: 'string' }
+                  },
+                  required: ['assignments', 'explanation'],
+                  additionalProperties: false
+                }
+              }
+            }
+          : { type: 'json_object' },
         max_completion_tokens: 2500
       }),
       signal: AbortSignal.timeout(30000)
@@ -470,35 +559,16 @@ export default async function handler(req, res) {
     }
 
     const choice = result.choices?.[0]
-    const output = choice?.message?.content
-    if (!output) {
-      console.error('Groq returned no message content:', choice?.finish_reason || 'no_finish_reason')
-      if (choice?.finish_reason === 'length') {
-        return json(res, 502, { error: 'La risposta AI ha esaurito il limite di token prima di completarsi. Riprova con istruzioni più brevi.' })
-      }
-      return json(res, 502, { error: `Groq non ha restituito testo (finish_reason: ${choice?.finish_reason || 'nessuna'}). Riprova.` })
-    }
-    let proposal
-    try {
-      proposal = JSON.parse(output)
-    } catch {
-      const start = output.indexOf('{')
-      const end = output.lastIndexOf('}')
-      if (start < 0 || end <= start) {
-        return json(res, 502, { error: 'Groq ha restituito una risposta non in formato JSON. Riprova con una richiesta più semplice.' })
-      }
-      try {
-        proposal = JSON.parse(output.slice(start, end + 1))
-      } catch {
-        return json(res, 502, { error: 'Groq ha restituito un JSON non valido. Riprova con una richiesta più semplice.' })
-      }
-    }
-    const assignmentIds = proposal.assignments?.map(item => item.id) || []
-    if (assignmentIds.length !== ids.length || new Set(assignmentIds).size !== ids.length || assignmentIds.some(id => !ids.includes(id)) || proposal.assignments.filter(item => item.team === 'A').length !== perTeam || proposal.assignments.filter(item => item.team === 'B').length !== perTeam) {
-      return json(res, 502, { error: 'La proposta AI non rispettava i vincoli. Riprova.' })
+    const proposal = parseJsonObject(choice?.message?.content)
+    const validProposal = hasValidAssignments(proposal, ids, perTeam)
+    if (!validProposal) {
+      console.warn('Groq squad builder returned an unusable proposal; using local balancing.', choice?.finish_reason || 'no_finish_reason')
     }
 
-    const balanced = balanceTeams(roster, perTeam, proposal.assignments, prompt, historical)
+    const balanced = balanceTeams(roster, perTeam, validProposal ? proposal.assignments : [], prompt, historical)
+    if (!validProposal) {
+      balanced.explanation = `La risposta AI non era utilizzabile: ho composto le squadre con il bilanciatore locale. ${balanced.explanation}`
+    }
     return json(res, 200, balanced)
   } catch (error) {
     console.error('Squad builder error:', error.name || 'Error')
