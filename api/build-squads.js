@@ -467,13 +467,7 @@ export default async function handler(req, res) {
       }]
     })
 
-    const aiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${groqKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    const groqRequestBody = {
         model,
         reasoning_effort: 'low',
         messages: [
@@ -525,10 +519,29 @@ export default async function handler(req, res) {
             }
           : { type: 'json_object' },
         max_completion_tokens: 2500
-      }),
+      }
+    const groqRequestOptions = {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      }
+    }
+    let aiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      ...groqRequestOptions,
+      body: JSON.stringify(groqRequestBody),
       signal: AbortSignal.timeout(30000)
     })
-    const result = await aiResponse.json()
+    let result = await aiResponse.json()
+    if (!aiResponse.ok && result.error?.code === 'json_validate_failed' && supportsStrictJsonSchema) {
+      console.warn('Groq strict JSON schema generation failed; retrying with JSON object mode.')
+      aiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        ...groqRequestOptions,
+        body: JSON.stringify({ ...groqRequestBody, response_format: { type: 'json_object' } }),
+        signal: AbortSignal.timeout(30000)
+      })
+      result = await aiResponse.json()
+    }
     if (!aiResponse.ok) {
       const code = String(result.error?.code || '')
       const errorType = String(result.error?.type || '')
