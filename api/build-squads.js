@@ -321,7 +321,7 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
     const mvpAwardDifference = Math.abs(mvpBalanceValueA - (totalMvpBalanceValue - mvpBalanceValueA))
     const score = strengthDifference * 4
       + roleDifference * 1.5
-      + mvpWinnerDifference * 3.5
+      + mvpWinnerDifference * 100
       + mvpAwardDifference * 1.5
     const preferenceMoves = participants.reduce((count, participant, index) =>
       count + (inA[index] === (proposedTeamById.get(participant.id) === 'A') ? 0 : 1), 0)
