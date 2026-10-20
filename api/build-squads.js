@@ -256,14 +256,14 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
     const mvpRate = player.mvp / (games + 5)
     const mvpScore = clamp(mvpRate * 30, 0, 10)
     const form = player.playerId ? historical.formByPlayerId.get(player.playerId) : null
-    if (!form?.games) return rating * 0.58 + contributionScore * 0.22 + mvpScore * 0.08 + rating * 0.12
+    if (!form?.games) return rating * 0.54 + contributionScore * 0.22 + mvpScore * 0.16 + rating * 0.08
 
     const recentRating = form.rating ?? rating
     const recentContributionRate = (form.goals + form.assists * 0.7) / (form.games + 1)
     const recentContribution = 10 * recentContributionRate / (recentContributionRate + 0.65)
     const recentResults = form.points == null ? 5 : form.points * 10
     const recentStrength = recentRating * 0.7 + recentContribution * 0.18 + recentResults * 0.12
-    return rating * 0.58 + contributionScore * 0.22 + mvpScore * 0.08 + recentStrength * 0.12
+    return rating * 0.54 + contributionScore * 0.22 + mvpScore * 0.16 + recentStrength * 0.08
   })
   const roles = participants.map(p => normalizePosition(p.position || p.role))
   const allRoles = [...new Set(roles.filter(Boolean))]
@@ -286,6 +286,10 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
     }
   }
   const totalStrength = strengths.reduce((sum, value) => sum + value, 0)
+  const mvpWinners = participants.map(player => player.mvp > 0 ? 1 : 0)
+  const mvpBalanceValues = participants.map(player => Math.log1p(player.mvp))
+  const totalMvpWinners = mvpWinners.reduce((sum, value) => sum + value, 0)
+  const totalMvpBalanceValue = mvpBalanceValues.reduce((sum, value) => sum + value, 0)
   const totalRoleCounts = Object.fromEntries(allRoles.map(role => [role, roles.filter(item => item === role).length]))
   const pairAffinity = participants.map((player, index) => participants.map((other, otherIndex) => (
     index === otherIndex || !player.playerId || !other.playerId
@@ -302,7 +306,7 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
   let bestPreferenceMoves = Number.POSITIVE_INFINITY
   let bestTeams = null
 
-  function evaluate(strengthA, pairAffinityA, pairAffinityIncidentA) {
+  function evaluate(strengthA, pairAffinityA, pairAffinityIncidentA, mvpWinnersA, mvpBalanceValueA) {
     if (pairConstraint && (inA[pairConstraint.first] === inA[pairConstraint.second]) !== pairConstraint.together) return
     const pairAffinityB = totalPairAffinity + pairAffinityA - pairAffinityIncidentA
     const teamStrengthA = strengthA + pairAffinityA * 1.5
@@ -313,7 +317,12 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
       const countB = totalRoleCounts[role] - countA
       return sum + Math.abs(countA - countB)
     }, 0) / 2
-    const score = strengthDifference * 4 + roleDifference * 1.5
+    const mvpWinnerDifference = Math.abs(mvpWinnersA - (totalMvpWinners - mvpWinnersA))
+    const mvpAwardDifference = Math.abs(mvpBalanceValueA - (totalMvpBalanceValue - mvpBalanceValueA))
+    const score = strengthDifference * 4
+      + roleDifference * 1.5
+      + mvpWinnerDifference * 3.5
+      + mvpAwardDifference * 1.5
     const preferenceMoves = participants.reduce((count, participant, index) =>
       count + (inA[index] === (proposedTeamById.get(participant.id) === 'A') ? 0 : 1), 0)
     if (score > bestScore + 1e-9 || (Math.abs(score - bestScore) <= 1e-9 && preferenceMoves >= bestPreferenceMoves)) return
@@ -326,9 +335,9 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
     }))
   }
 
-  function search(start, chosen, strengthA, pairAffinityA, pairAffinityIncidentA) {
+  function search(start, chosen, strengthA, pairAffinityA, pairAffinityIncidentA, mvpWinnersA, mvpBalanceValueA) {
     if (chosen === perTeam) {
-      evaluate(strengthA, pairAffinityA, pairAffinityIncidentA)
+      evaluate(strengthA, pairAffinityA, pairAffinityIncidentA, mvpWinnersA, mvpBalanceValueA)
       return
     }
     const stillNeeded = perTeam - chosen
@@ -345,14 +354,16 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
         chosen + 1,
         strengthA + strengths[index],
         pairAffinityA + newPairAffinity,
-        pairAffinityIncidentA + pairAffinityByPlayer[index]
+        pairAffinityIncidentA + pairAffinityByPlayer[index],
+        mvpWinnersA + mvpWinners[index],
+        mvpBalanceValueA + mvpBalanceValues[index]
       )
       if (role) roleCountsA[role] -= 1
       inA[index] = false
     }
   }
 
-  search(0, 0, 0, 0, 0)
+  search(0, 0, 0, 0, 0, 0, 0)
 
   const teamMeans = ['A', 'B'].map(team => {
     const values = participants
@@ -369,13 +380,18 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
   const pairHighlights = [historical.strongestPairs[0], historical.weakestPairs[0]].filter(Boolean).map(pair => (
     `${pair.player1} e ${pair.player2}: ${pair.wins} vittorie, ${pair.draws} pareggi e ${pair.losses} sconfitte in ${pair.games} partite insieme`
   ))
+  const mvpDistribution = ['A', 'B'].map(team => participants
+    .filter(player => player.mvp > 0 && bestTeams.find(assignment => assignment.id === player.id)?.team === team).length)
+  const totalMvpAwardsByTeam = ['A', 'B'].map(team => participants
+    .filter(player => bestTeams.find(assignment => assignment.id === player.id)?.team === team)
+    .reduce((sum, player) => sum + player.mvp, 0))
   const historyExplanation = historical.matchesConsidered
     ? ` Ho considerato ${historical.matchesConsidered} partite precedenti, forma recente e combinazioni storiche.`
     : ' Non c’erano partite precedenti tra i partecipanti selezionati.'
   const pairExplanation = pairHighlights.length ? ` Coppie rilevanti: ${pairHighlights.join('; ')}.` : ''
   return {
     assignments: bestTeams,
-    explanation: `Ho bilanciato voti, gol, assist, MVP, forma recente e ruoli: media dei voti noti A ${meanLabel(teamMeans[0])}, B ${meanLabel(teamMeans[1])}. Le statistiche sono rapportate alle presenze per non premiare solo chi ha giocato di più.${historyExplanation}${pairExplanation}`
+    explanation: `Ho composto le squadre bilanciando voti, gol, assist, MVP, forma recente e ruoli: media dei voti noti A ${meanLabel(teamMeans[0])}, B ${meanLabel(teamMeans[1])}. Giocatori con almeno un MVP: A ${mvpDistribution[0]}, B ${mvpDistribution[1]} (premi totali: A ${totalMvpAwardsByTeam[0]}, B ${totalMvpAwardsByTeam[1]}). Le statistiche sono rapportate alle presenze per non premiare solo chi ha giocato di più.${historyExplanation}${pairExplanation}`
   }
 }
 
@@ -579,9 +595,6 @@ export default async function handler(req, res) {
     }
 
     const balanced = balanceTeams(roster, perTeam, validProposal ? proposal.assignments : [], prompt, historical)
-    if (!validProposal) {
-      balanced.explanation = `La risposta AI non era utilizzabile: ho composto le squadre con il bilanciatore locale. ${balanced.explanation}`
-    }
     return json(res, 200, balanced)
   } catch (error) {
     console.error('Squad builder error:', error.name || 'Error')
