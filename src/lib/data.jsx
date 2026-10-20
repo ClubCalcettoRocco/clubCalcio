@@ -11,6 +11,8 @@ export function DataProvider({ children }) {
     players: [],
     stats: [],
     matches: [],
+    aiStrengthByPlayerId: {},
+    aiStrengthError: '',
     loading: true,
     error: null
   })
@@ -32,10 +34,14 @@ export function DataProvider({ children }) {
             .select('id,first_name,last_name,photo_url,role_label,approved,position,preferred_foot,play_style,height_cm,weight_kg,card_style')
             .order('first_name')
 
-        const [p, s, m] = await Promise.all([
+        const aiStrengthQuery = isAdmin
+          ? supabase.from('player_ai_strength').select('player_id,strength_level')
+          : Promise.resolve({ data: [], error: null })
+        const [p, s, m, aiStrengths] = await Promise.all([
           playersQuery,
           supabase.from('player_stats').select('*').order('gol', { ascending: false }),
-          supabase.from('matches').select('*, match_players(*), goals(*)').order('kickoff', { ascending: false })
+          supabase.from('matches').select('*, match_players(*), goals(*)').order('kickoff', { ascending: false }),
+          aiStrengthQuery
         ])
 
         if (requestId !== requestIdRef.current) return
@@ -45,6 +51,8 @@ export function DataProvider({ children }) {
           players: p.data || [],
           stats: s.data || [],
           matches: m.data || [],
+          aiStrengthByPlayerId: Object.fromEntries((aiStrengths.data || []).map(row => [row.player_id, row.strength_level])),
+          aiStrengthError: aiStrengths.error ? explainError(aiStrengths.error, 'Non è stato possibile caricare i livelli forza AI.') : '',
           loading: false,
           error: err ? explainError(err, 'Non è stato possibile caricare i dati.') : null
         })

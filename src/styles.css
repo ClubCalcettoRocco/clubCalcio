@@ -6541,6 +6541,16 @@ a:focus-visible,
 .team-roster-copy strong,.team-roster-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-roster-copy strong { font-size: 12px; }
 .team-roster-copy small { color: var(--muted); font-size: 10px; }
+.ai-strength-control { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.ai-strength-control > span { color: var(--muted); font-size: 9px; font-weight: 800; }
+.ai-strength-select { width: auto; max-width: 160px; min-height: 28px !important; padding: 4px 22px 4px 7px !important; font-size: 10px !important; }
+.ai-strength-warning { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 11px; }
+.ai-strength-profile-card { display: grid; gap: 12px; margin-top: 14px; }
+.ai-strength-profile-card h2 { margin: 4px 0; font-size: 18px; }
+.ai-strength-profile-card p { margin: 4px 0 0; font-size: 12px; }
+.ai-strength-profile-field { display: grid; gap: 6px; max-width: 320px; }
+.ai-strength-profile-field > span { font-size: 11px; font-weight: 800; }
+.ai-strength-profile-field .input { min-height: 42px; }
 .team-roster-actions { flex: 0 0 auto; gap: 4px; }
 .team-move-btn,.team-remove-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; border: 1px solid var(--border); border-radius: 9px; background: rgba(255,255,255,.04); color: var(--text); font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
 .team-move-btn { padding: 0 8px; }
@@ -6595,7 +6605,10 @@ a:focus-visible,
 .guest-builder-heading { justify-content: flex-start; }
 .guest-builder-icon { display: grid; place-items: center; width: 37px; height: 37px; margin-left: auto; border-radius: 12px; background: rgba(197,173,114,.12); color: var(--accent-2); font-size: 20px; }
 .guest-builder-form { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; }
+.guest-builder-form.has-ai-strength { grid-template-columns: minmax(120px,1fr) minmax(120px,1fr) minmax(150px,.9fr) auto auto; align-items: end; }
 .guest-builder-form .input { min-width: 0; min-height: 44px; padding: 10px 12px; font-size: 12px; }
+.guest-builder-form .ai-strength-control { display: grid; gap: 4px; margin: 0; }
+.guest-builder-form .ai-strength-select { width: 100%; max-width: none; min-height: 44px !important; padding: 8px 24px 8px 10px !important; font-size: 11px !important; }
 .guest-builder-form .btn { min-height: 44px; padding: 9px 12px; font-size: 11px; white-space: nowrap; }
 .guest-add-a { border-color: rgba(97,207,162,.3); }
 .guest-add-b { border-color: rgba(129,169,255,.3); }
@@ -6640,6 +6653,8 @@ a:focus-visible,
   .available-player-actions { gap: 3px; }
   .available-player-actions .chip { min-width: 37px; min-height: 36px; padding: 0 5px; font-size: 10px; }
   .guest-builder-form { grid-template-columns: 1fr 1fr; }
+  .guest-builder-form.has-ai-strength { grid-template-columns: 1fr 1fr; }
+  .guest-builder-form .guest-ai-strength { grid-column: 1 / -1; }
   .guest-builder-form .btn { width: 100%; }
 }
 

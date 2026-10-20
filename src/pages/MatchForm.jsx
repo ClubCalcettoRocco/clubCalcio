@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { ActionError, Avatar } from '../components/ui'
 import { explainError } from '../lib/errorMessage'
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '../lib/sessionDraft'
+import { AI_STRENGTH_OPTIONS, DEFAULT_AI_STRENGTH } from '../lib/aiStrength'
 import { getPlayerBalancingStrength } from '../components/PlayerCard'
 import {
   TYPES,
@@ -38,8 +39,8 @@ function AssistantAvatar() {
 export default function MatchForm() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { matches, players, statsById, reload } = useData()
-  const { session } = useAuth()
+  const { matches, players, statsById, aiStrengthByPlayerId, reload } = useData()
+  const { session, isAdmin } = useAuth()
 
   const existing = id
     ? matches.find(m => m.id === id)
@@ -90,8 +91,9 @@ export default function MatchForm() {
   const draftKey = `clubcalcio:match-form:${id || 'new'}`
   const guestDraftKey = `${draftKey}:guest-fields`
 
-  const [guestFirstName, setGuestFirstName] = useState(() => readSessionDraft(guestDraftKey, { first: '', last: '' }).first)
-  const [guestLastName, setGuestLastName] = useState(() => readSessionDraft(guestDraftKey, { first: '', last: '' }).last)
+  const [guestFirstName, setGuestFirstName] = useState(() => readSessionDraft(guestDraftKey, { first: '', last: '', strengthLevel: 3 }).first)
+  const [guestLastName, setGuestLastName] = useState(() => readSessionDraft(guestDraftKey, { first: '', last: '', strengthLevel: 3 }).last)
+  const [guestStrengthLevel, setGuestStrengthLevel] = useState(() => readSessionDraft(guestDraftKey, { first: '', last: '', strengthLevel: 3 }).strengthLevel || 3)
 
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -112,8 +114,8 @@ export default function MatchForm() {
   }, [draftKey, f])
 
   useEffect(() => {
-    writeSessionDraft(guestDraftKey, { first: guestFirstName, last: guestLastName })
-  }, [guestDraftKey, guestFirstName, guestLastName])
+    writeSessionDraft(guestDraftKey, { first: guestFirstName, last: guestLastName, strengthLevel: guestStrengthLevel })
+  }, [guestDraftKey, guestFirstName, guestLastName, guestStrengthLevel])
 
   if (id && !existing) {
     return <p className="muted">Partita non trovata.</p>
@@ -237,6 +239,7 @@ export default function MatchForm() {
           player_id: null,
           guest_first_name: firstName,
           guest_last_name: lastName,
+          strength_level: isAdmin ? Number(guestStrengthLevel) : null,
           team: team || null
         }
       ]
@@ -292,6 +295,16 @@ export default function MatchForm() {
       participants: v.participants.filter(
         p => p.key !== key
       )
+    }))
+  }
+
+  function updateGuestStrength(key, strengthLevel) {
+    if (!isAdmin) return
+    setF(value => ({
+      ...value,
+      participants: value.participants.map(participant => participant.key === key
+        ? { ...participant, strength_level: Number(strengthLevel) }
+        : participant)
     }))
   }
 
@@ -372,6 +385,11 @@ export default function MatchForm() {
               position: player?.position || 'Non specificato',
               role: player?.role_label || '',
               playerStrength: player ? getPlayerBalancingStrength(player, stats) : null,
+              strengthLevel: isAdmin
+                ? player
+                  ? aiStrengthByPlayerId[player.id] ?? 3
+                  : p.strength_level ?? 3
+                : null,
               averageRating: stats?.media_voto ?? null,
               ratingVotes: stats?.valutazioni ?? 0,
               goals: stats?.gol ?? 0,
@@ -564,6 +582,7 @@ export default function MatchForm() {
                 <span className="team-roster-copy">
                   <strong>{participantName(participant)}</strong>
                   <small>{player ? `${player.position || 'Ruolo da definire'}${stats?.media_voto != null ? ` · ⭐ ${Number(stats.media_voto).toFixed(1)}` : ''}` : 'Ospite'}</small>
+                  {isAdmin && !player && <label className="ai-strength-control"><span>Forza AI</span><select className="input ai-strength-select" aria-label={`Forza AI di ${participantName(participant)}`} value={participant.strength_level ?? DEFAULT_AI_STRENGTH} onChange={event => updateGuestStrength(participant.key, event.target.value)}>{AI_STRENGTH_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
                 </span>
                 <div className="team-roster-actions">
                   <button type="button" className="team-move-btn" disabled={count(destination) >= max} title={count(destination) >= max ? `${destinationName} è completa` : `Sposta in ${destinationName}`} onClick={() => player ? toggleRegisteredPlayer(player.id, destination) : setGuestTeam(participant.key, destination)} aria-label={`Sposta ${participantName(participant)} in ${destinationName}`}>→ {destination}</button>
@@ -761,14 +780,15 @@ export default function MatchForm() {
             <div><h3>Aggiungi un ospite</h3><p className="muted">Scegli subito la squadra in cui inserirlo.</p></div>
             <span className="guest-builder-icon">＋</span>
           </div>
-          <div className="guest-builder-form">
+          <div className={`guest-builder-form${isAdmin ? ' has-ai-strength' : ''}`}>
             <input className="input" placeholder="Nome" value={guestFirstName} onChange={event => setGuestFirstName(event.target.value)} aria-label="Nome ospite" />
             <input className="input" placeholder="Cognome" value={guestLastName} onChange={event => setGuestLastName(event.target.value)} aria-label="Cognome ospite" />
+            {isAdmin && <label className="ai-strength-control guest-ai-strength"><span>Forza AI ospite</span><select className="input ai-strength-select" value={guestStrengthLevel} onChange={event => setGuestStrengthLevel(Number(event.target.value))}>{AI_STRENGTH_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
             <button type="button" className="btn guest-add-a" disabled={count('A') >= max || f.participants.length >= max * 2} onClick={() => addGuest('A')}>+ {f.a || 'Squadra A'}</button>
             <button type="button" className="btn guest-add-b" disabled={count('B') >= max || f.participants.length >= max * 2} onClick={() => addGuest('B')}>+ {f.b || 'Squadra B'}</button>
           </div>
           {f.participants.some(participant => !participant.player_id) && <p className="guest-list-label">Ospiti già inseriti</p>}
-          {f.participants.filter(participant => !participant.player_id).map(guest => <div className="guest-roster-chip" key={guest.key}><span>👤 {participantName(guest)} <small>· Squadra {guest.team || 'da assegnare'}</small></span><button type="button" onClick={() => removeGuest(guest.key)} aria-label={`Rimuovi ${participantName(guest)}`}>×</button></div>)}
+          {f.participants.filter(participant => !participant.player_id).map(guest => <div className="guest-roster-chip" key={guest.key}><span>👤 {participantName(guest)} <small>· Squadra {guest.team || 'da assegnare'}</small></span>{isAdmin && <label className="ai-strength-control guest-chip-strength"><span>Forza AI</span><select className="input ai-strength-select" aria-label={`Forza AI di ${participantName(guest)}`} value={guest.strength_level ?? 3} onChange={event => updateGuestStrength(guest.key, event.target.value)}>{AI_STRENGTH_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}<button type="button" onClick={() => removeGuest(guest.key)} aria-label={`Rimuovi ${participantName(guest)}`}>×</button></div>)}
         </section>
       </section>
 

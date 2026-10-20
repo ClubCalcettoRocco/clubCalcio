@@ -19,6 +19,7 @@ import {
 import AvatarUpload from '../components/AvatarUpload'
 import { explainError } from '../lib/errorMessage'
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '../lib/sessionDraft'
+import { AI_STRENGTH_OPTIONS, DEFAULT_AI_STRENGTH } from '../lib/aiStrength'
 import PlayerCard, { CARD_STYLE_OPTIONS } from '../components/PlayerCard'
 
 import {
@@ -34,6 +35,8 @@ export default function PlayerProfile({ self = false }) {
   const {
     playersById,
     statsById,
+    aiStrengthByPlayerId,
+    aiStrengthError,
     matches,
     reload
   } = useData()
@@ -63,6 +66,9 @@ export default function PlayerProfile({ self = false }) {
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
   const [saving, setSaving] = useState(false)
+  const [savingStrength, setSavingStrength] = useState(false)
+  const [strengthErr, setStrengthErr] = useState('')
+  const [strengthMsg, setStrengthMsg] = useState('')
 
   /*
    * =========================================================
@@ -312,6 +318,26 @@ export default function PlayerProfile({ self = false }) {
     }
   }
 
+  async function saveAiStrength(event) {
+    const strengthLevel = Number(event.target.value)
+    if (!isAdmin || !playerId) return
+    setSavingStrength(true)
+    setStrengthErr('')
+    setStrengthMsg('')
+    try {
+      const { error } = await supabase
+        .from('player_ai_strength')
+        .upsert({ player_id: playerId, strength_level: strengthLevel })
+      if (error) throw error
+      await reload()
+      setStrengthMsg('Forza AI aggiornata.')
+    } catch (error) {
+      setStrengthErr(explainError(error, 'Non è stato possibile salvare la forza AI.'))
+    } finally {
+      setSavingStrength(false)
+    }
+  }
+
   /*
    * =========================================================
    * GIOCATORE NON TROVATO
@@ -407,6 +433,25 @@ export default function PlayerProfile({ self = false }) {
               : 'Il giocatore può aggiornare il proprio profilo. Convocazioni, risultati e profili degli altri giocatori sono gestiti dagli amministratori.'}</p>
         </div>
       </details>
+
+      {isAdmin && (
+        <section className="card ai-strength-profile-card">
+          <div>
+            <span className="eyebrow">SOLO ADMIN</span>
+            <h2>Forza per l’AI</h2>
+            <p className="muted">Indica quanto è forte questo giocatore. L’informazione serve a bilanciare le squadre e non è visibile agli altri giocatori.</p>
+          </div>
+          {aiStrengthError && <p className="ai-strength-warning">Per attivare il salvataggio, esegui <code>supabase/player-ai-strength.sql</code> nel SQL Editor di Supabase.</p>}
+          <label className="ai-strength-profile-field">
+            <span>Livello di forza</span>
+            <select className="input" value={aiStrengthByPlayerId[playerId] ?? DEFAULT_AI_STRENGTH} disabled={savingStrength || Boolean(aiStrengthError)} onChange={saveAiStrength}>
+              {AI_STRENGTH_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+          {strengthErr && <p className="error">{strengthErr}</p>}
+          {strengthMsg && <p className="success">{strengthMsg}</p>}
+        </section>
+      )}
 
       {/* =====================================================
           MODIFICA PROFILO
