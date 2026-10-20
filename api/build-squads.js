@@ -251,19 +251,24 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
     const rating = hasRating
       ? neutralRating + (Number(player.averageRating) - neutralRating) * ratingConfidence
       : neutralRating
+    const overallStrength = player.playerStrength == null
+      ? rating
+      : clamp(Number(player.playerStrength), 50, 99) / 10
     const contributionRate = (player.goals + player.assists * 0.7) / (games + 3)
     const contributionScore = 10 * contributionRate / (contributionRate + 0.65)
     const mvpRate = player.mvp / (games + 5)
     const mvpScore = clamp(mvpRate * 30, 0, 10)
     const form = player.playerId ? historical.formByPlayerId.get(player.playerId) : null
-    if (!form?.games) return rating * 0.54 + contributionScore * 0.22 + mvpScore * 0.16 + rating * 0.08
+    if (!form?.games) {
+      return overallStrength * 0.35 + rating * 0.25 + contributionScore * 0.22 + mvpScore * 0.15 + neutralRating * 0.03
+    }
 
     const recentRating = form.rating ?? rating
     const recentContributionRate = (form.goals + form.assists * 0.7) / (form.games + 1)
     const recentContribution = 10 * recentContributionRate / (recentContributionRate + 0.65)
     const recentResults = form.points == null ? 5 : form.points * 10
     const recentStrength = recentRating * 0.7 + recentContribution * 0.18 + recentResults * 0.12
-    return rating * 0.54 + contributionScore * 0.22 + mvpScore * 0.16 + recentStrength * 0.08
+    return overallStrength * 0.35 + rating * 0.2 + contributionScore * 0.2 + mvpScore * 0.15 + recentStrength * 0.1
   })
   const roles = participants.map(p => normalizePosition(p.position || p.role))
   const allRoles = [...new Set(roles.filter(Boolean))]
@@ -375,6 +380,15 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
       ? values.reduce((sum, value) => sum + value, 0) / values.length
       : null
   })
+  const teamOverallMeans = ['A', 'B'].map(team => {
+    const values = participants
+      .filter((participant, index) => bestTeams[index].team === team && participant.playerStrength != null)
+      .map(participant => Number(participant.playerStrength) / 10)
+      .filter(Number.isFinite)
+    return values.length
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : null
+  })
 
   const meanLabel = value => value == null ? 'senza voti' : value.toFixed(2)
   const pairHighlights = [historical.strongestPairs[0], historical.weakestPairs[0]].filter(Boolean).map(pair => (
@@ -391,7 +405,7 @@ function balanceTeams(participants, perTeam, proposedAssignments, prompt, histor
   const pairExplanation = pairHighlights.length ? ` Coppie rilevanti: ${pairHighlights.join('; ')}.` : ''
   return {
     assignments: bestTeams,
-    explanation: `Ho composto le squadre bilanciando voti, gol, assist, MVP, forma recente e ruoli: media dei voti noti A ${meanLabel(teamMeans[0])}, B ${meanLabel(teamMeans[1])}. Giocatori con almeno un MVP: A ${mvpDistribution[0]}, B ${mvpDistribution[1]} (premi totali: A ${totalMvpAwardsByTeam[0]}, B ${totalMvpAwardsByTeam[1]}). Le statistiche sono rapportate alle presenze per non premiare solo chi ha giocato di più.${historyExplanation}${pairExplanation}`
+    explanation: `Ho composto le squadre bilanciando livello della carta, voti, gol, assist, MVP, forma recente e ruoli: OVR medio A ${meanLabel(teamOverallMeans[0])}, B ${meanLabel(teamOverallMeans[1])}; media voti A ${meanLabel(teamMeans[0])}, B ${meanLabel(teamMeans[1])}. Giocatori con almeno un MVP: A ${mvpDistribution[0]}, B ${mvpDistribution[1]} (premi totali: A ${totalMvpAwardsByTeam[0]}, B ${totalMvpAwardsByTeam[1]}). Gol e assist sono rapportati alle presenze per non premiare solo chi ha giocato di più.${historyExplanation}${pairExplanation}`
   }
 }
 
@@ -454,6 +468,9 @@ export default async function handler(req, res) {
       name: String(p.name || '').slice(0, 100),
       position: String(p.position || 'Non specificato').slice(0, 50),
       role: String(p.role || '').slice(0, 60),
+      playerStrength: p.playerStrength != null && Number.isFinite(Number(p.playerStrength))
+        ? clamp(Number(p.playerStrength), 50, 99)
+        : null,
       averageRating: p.averageRating != null && p.averageRating !== '' && Number.isFinite(Number(p.averageRating)) ? Number(p.averageRating) : null,
       ratingVotes: Math.min(1000000, Math.max(0, Math.floor(Number(p.ratingVotes) || 0))),
       goals: Math.min(1000000, Math.max(0, Math.floor(Number(p.goals) || 0))),

@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { ActionError, Avatar } from '../components/ui'
 import { explainError } from '../lib/errorMessage'
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from '../lib/sessionDraft'
+import { getPlayerBalancingStrength } from '../components/PlayerCard'
 import {
   TYPES,
   fullName,
@@ -370,6 +371,7 @@ export default function MatchForm() {
               playerId: player?.id || null,
               position: player?.position || 'Non specificato',
               role: player?.role_label || '',
+              playerStrength: player ? getPlayerBalancingStrength(player, stats) : null,
               averageRating: stats?.media_voto ?? null,
               ratingVotes: stats?.valutazioni ?? 0,
               goals: stats?.gol ?? 0,

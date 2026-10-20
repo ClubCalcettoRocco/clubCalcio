@@ -602,6 +602,13 @@ function calculateOverall(
   return clamp(overall)
 }
 
+export function getPlayerBalancingStrength(player, stats) {
+  const attributes = calculateAttributes(player, stats)
+  const rawOverall = calculateOverall(attributes, player?.position)
+  const experienceFactor = getExperienceFactor(stats)
+  return clamp(65 + (rawOverall - 65) * experienceFactor)
+}
+
 
 /* =========================================================
    RARITÀ AUTOMATICA
