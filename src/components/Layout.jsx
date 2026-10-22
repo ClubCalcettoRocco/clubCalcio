@@ -15,6 +15,25 @@ const ITEMS = [
   ['/profilo', 'Profilo', '👤']
 ]
 
+function getPageTitle(pathname) {
+  if (pathname === '/') return 'Home'
+  if (pathname === '/partite/nuova') return 'Nuova partita'
+  if (pathname.endsWith('/risultato')) return 'Risultato partita'
+  if (pathname.endsWith('/modifica')) return 'Modifica partita'
+  if (pathname.startsWith('/partite/')) return 'Dettaglio partita'
+  if (pathname === '/partite') return 'Partite'
+  if (pathname === '/sondaggi/nuovo') return 'Nuovo sondaggio'
+  if (pathname.startsWith('/sondaggi')) return 'Sondaggi'
+  if (pathname === '/votazioni') return 'Votazioni'
+  if (pathname === '/classifiche') return 'Classifiche'
+  if (pathname === '/stagione') return 'Fine stagione'
+  if (pathname.startsWith('/giocatori/')) return 'Profilo giocatore'
+  if (pathname === '/giocatori') return 'Giocatori'
+  if (pathname === '/profilo') return 'Il mio profilo'
+  if (pathname.startsWith('/admin')) return 'Amministrazione'
+  return 'Calcetto Club'
+}
+
 export default function Layout({ children }) {
   const { me, isAdmin, signOut } = useAuth()
   const location = useLocation()
@@ -26,10 +45,10 @@ export default function Layout({ children }) {
       {/* SIDEBAR DESKTOP */}
       <aside className="sidebar">
         <Link to="/" className="brand">
-          <span className="brand-ball">⚽</span>
-          <span>
+          <img className="brand-ball" src="/icons/icon-192.png" alt="" />
+          <span className="brand-copy">
             <strong>Calcetto</strong>
-            <small>Club</small>
+            <small>CLUB · MATCHDAY</small>
           </span>
         </Link>
 
@@ -84,7 +103,9 @@ export default function Layout({ children }) {
       <main className="content">
         <header className="topbar">
           <div className="breadcrumbs">
-            {location.pathname === '/' ? '' : 'Calcetto Club'}
+            <span>CLUB CALCETTO</span>
+            <i aria-hidden="true">/</i>
+            <strong>{getPageTitle(location.pathname)}</strong>
           </div>
 
           <div className="topbar-actions">

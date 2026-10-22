@@ -109,6 +109,20 @@ export default function Home() {
             Tutto in un unico posto.
           </p>
 
+          <div className="home-hero-actions">
+            <Link
+              to={next ? `/partite/${next.id}` : '/partite'}
+              className="home-hero-cta"
+            >
+              <span className="home-hero-cta-mark" aria-hidden="true">⚽</span>
+              <span className="home-hero-cta-copy">
+                <strong>{next ? 'Apri la prossima partita' : 'Apri il calendario'}</strong>
+                <small>{next ? `${fmtDate(next.kickoff)} · ${fmtTime(next.kickoff)}` : 'Partite e risultati del gruppo'}</small>
+              </span>
+              <span className="home-hero-cta-arrow" aria-hidden="true">→</span>
+            </Link>
+          </div>
+
         </div>
 
         <div

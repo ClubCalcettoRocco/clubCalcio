@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -13,10 +13,11 @@ import {
   AuthProvider
 } from './lib/auth'
 
-import { DataProvider } from './lib/data'
+import { DataProvider, useData } from './lib/data'
 
 import Layout from './components/Layout'
 import DataGate from './components/DataGate'
+import BrandSplash from './components/BrandSplash'
 
 import { ActionError, Spinner } from './components/ui'
 import PwaUpdatePrompt from './components/PwaUpdatePrompt'
@@ -123,12 +124,36 @@ function Protected() {
 
   return (
     <DataProvider>
-      <DataGate>
-        <Layout>
-          <Outlet />
-        </Layout>
-      </DataGate>
+      <AuthenticatedExperience />
     </DataProvider>
+  )
+}
+
+function AuthenticatedExperience() {
+  const { loading } = useData()
+  const [minimumElapsed, setMinimumElapsed] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+  const exiting = minimumElapsed && !loading
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMinimumElapsed(true), 1250)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!exiting) return undefined
+    const timer = window.setTimeout(() => setDismissed(true), 420)
+    return () => window.clearTimeout(timer)
+  }, [exiting])
+
+  if (!dismissed) return <BrandSplash exiting={exiting} />
+
+  return (
+    <DataGate>
+      <Layout>
+        <Outlet />
+      </Layout>
+    </DataGate>
   )
 }
 
