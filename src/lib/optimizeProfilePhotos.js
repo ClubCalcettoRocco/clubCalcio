@@ -3,6 +3,18 @@ import { supabase } from './supabase'
 const MAX_DIMENSION = 768
 const WEBP_QUALITY = 0.82
 
+function isWebpUrl(value) {
+  try {
+    return new URL(value, window.location.href).pathname.toLowerCase().endsWith('.webp')
+  } catch {
+    return /\.webp(?:$|[?#])/i.test(value || '')
+  }
+}
+
+export function getProfilePhotosToOptimize(players = []) {
+  return players.filter(player => player.photo_url && !isWebpUrl(player.photo_url))
+}
+
 function createOptimizedImage(blob) {
   return new Promise(async resolve => {
     if (typeof createImageBitmap !== 'function') {
@@ -37,7 +49,7 @@ function createOptimizedImage(blob) {
 export async function optimizeExistingProfilePhotos(players, ownerId, onProgress) {
   if (!ownerId) throw new Error('Non riesco a identificare l’account amministratore.')
 
-  const candidates = players.filter(player => player.photo_url)
+  const candidates = getProfilePhotosToOptimize(players)
   const results = { success: 0, skipped: 0, errors: [] }
 
   for (let index = 0; index < candidates.length; index += 1) {
@@ -52,6 +64,13 @@ export async function optimizeExistingProfilePhotos(players, ownerId, onProgress
 
       const source = await response.blob()
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(source.type)) {
+        results.skipped += 1
+        onProgress?.({ done: index + 1, total: candidates.length, name })
+        continue
+      }
+
+      // Some URLs have no .webp extension; don't re-upload content already in WebP.
+      if (source.type === 'image/webp') {
         results.skipped += 1
         onProgress?.({ done: index + 1, total: candidates.length, name })
         continue

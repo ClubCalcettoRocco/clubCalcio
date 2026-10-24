@@ -6,7 +6,7 @@ import { ActionError, Avatar } from '../components/ui'
 import { fullName } from '../lib/util'
 import AvatarUpload from '../components/AvatarUpload'
 import { explainError } from '../lib/errorMessage'
-import { optimizeExistingProfilePhotos } from '../lib/optimizeProfilePhotos'
+import { getProfilePhotosToOptimize, optimizeExistingProfilePhotos } from '../lib/optimizeProfilePhotos'
 
 export default function AdminPlayers() {
   const { players, reload } = useData()
@@ -40,6 +40,8 @@ export default function AdminPlayers() {
   const pendingPlayers = players.filter(
     p => p.approved === false
   )
+
+  const photosToOptimize = getProfilePhotosToOptimize(players)
 
   function start(p) {
     setOpen(p.id)
@@ -143,9 +145,9 @@ export default function AdminPlayers() {
   }
 
   async function optimizePhotos() {
-    const count = players.filter(player => player.photo_url).length
+    const count = photosToOptimize.length
     if (!count) return
-    if (!window.confirm(`Ottimizzo le foto di ${count} profili? Le immagini verranno ricaricate e gli URL aggiornati. L'operazione non elimina le foto originali.`)) return
+    if (!window.confirm(`Ottimizzo le ${count} foto non WebP? I WebP già presenti vengono lasciati invariati. Gli URL aggiornati useranno cache lunga; le foto originali non vengono eliminate.`)) return
 
     setOptimizingPhotos(true)
     setPhotoResult('')
@@ -154,7 +156,7 @@ export default function AdminPlayers() {
     try {
       const result = await optimizeExistingProfilePhotos(players, me.user_id, setPhotoProgress)
       await reload()
-      setPhotoResult(`${result.success} foto aggiornate${result.skipped ? `, ${result.skipped} saltate` : ''}${result.errors.length ? `, ${result.errors.length} non riuscite` : ''}.`)
+      setPhotoResult(`${result.success} foto non WebP aggiornate${result.skipped ? `, ${result.skipped} già ottimizzate o saltate` : ''}${result.errors.length ? `, ${result.errors.length} non riuscite` : ''}.`)
       if (result.errors.length) {
         setErr(result.errors.map(item => `${item.name}: ${item.message}`).join('\n'))
       }
@@ -181,10 +183,10 @@ export default function AdminPlayers() {
         <div className="section-head">
           <div>
             <h2>Ottimizza foto profilo</h2>
-            <p className="muted small-text">Riduce le immagini fino a 768 px, conserva la trasparenza e imposta una cache lunga. Le foto originali non vengono eliminate.</p>
+            <p className="muted small-text">Converte le foto non WebP fino a 768 px, conserva la trasparenza e imposta una cache lunga. I WebP già presenti vengono lasciati invariati.</p>
           </div>
-          <button className="btn small primary" onClick={optimizePhotos} disabled={optimizingPhotos || !players.some(player => player.photo_url)}>
-            {optimizingPhotos ? 'Ottimizzazione…' : 'Ottimizza tutte'}
+          <button className="btn small primary" onClick={optimizePhotos} disabled={optimizingPhotos || photosToOptimize.length === 0}>
+            {optimizingPhotos ? 'Ottimizzazione…' : `Ottimizza ${photosToOptimize.length} non WebP`}
           </button>
         </div>
         {photoProgress && <p className="muted small-text" role="status">{photoProgress.done}/{photoProgress.total}{photoProgress.name ? ` · ${photoProgress.name}` : ''}</p>}
