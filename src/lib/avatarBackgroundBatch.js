@@ -31,13 +31,13 @@ export async function removeBackgroundFromProfiles(players, ownerId, onProgress)
         })
       })
 
-      uploadedPath = `${ownerId}/background-removed/${player.id}-${crypto.randomUUID()}.png`
+      uploadedPath = `${ownerId}/background-removed/${player.id}-${crypto.randomUUID()}.${transparent.type === 'image/webp' ? 'webp' : 'png'}`
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(uploadedPath, transparent, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
           upsert: false,
-          contentType: 'image/png'
+          contentType: transparent.type
         })
       if (uploadError) throw uploadError
 
