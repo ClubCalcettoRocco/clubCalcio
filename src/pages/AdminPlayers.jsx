@@ -6,6 +6,7 @@ import { ActionError, Avatar } from '../components/ui'
 import { fullName } from '../lib/util'
 import AvatarUpload from '../components/AvatarUpload'
 import { explainError } from '../lib/errorMessage'
+import { optimizeExistingProfilePhotos } from '../lib/optimizeProfilePhotos'
 
 export default function AdminPlayers() {
   const { players, reload } = useData()
@@ -15,6 +16,9 @@ export default function AdminPlayers() {
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const [retryAction, setRetryAction] = useState(null)
+  const [optimizingPhotos, setOptimizingPhotos] = useState(false)
+  const [photoProgress, setPhotoProgress] = useState(null)
+  const [photoResult, setPhotoResult] = useState('')
 
   const [form, setForm] = useState({
     first_name: '',
@@ -138,6 +142,30 @@ export default function AdminPlayers() {
     await reload()
   }
 
+  async function optimizePhotos() {
+    const count = players.filter(player => player.photo_url).length
+    if (!count) return
+    if (!window.confirm(`Ottimizzo le foto di ${count} profili? Le immagini verranno ricaricate e gli URL aggiornati. L'operazione non elimina le foto originali.`)) return
+
+    setOptimizingPhotos(true)
+    setPhotoResult('')
+    setErr('')
+    setPhotoProgress({ done: 0, total: count, name: '' })
+    try {
+      const result = await optimizeExistingProfilePhotos(players, me.user_id, setPhotoProgress)
+      await reload()
+      setPhotoResult(`${result.success} foto aggiornate${result.skipped ? `, ${result.skipped} saltate` : ''}${result.errors.length ? `, ${result.errors.length} non riuscite` : ''}.`)
+      if (result.errors.length) {
+        setErr(result.errors.map(item => `${item.name}: ${item.message}`).join('\n'))
+      }
+    } catch (error) {
+      setErr(explainError(error, 'Non è stato possibile ottimizzare le foto.'))
+    } finally {
+      setOptimizingPhotos(false)
+      setPhotoProgress(null)
+    }
+  }
+
   return (
     <>
       <h1>Amministrazione</h1>
@@ -147,6 +175,20 @@ export default function AdminPlayers() {
         aggiornare i profili e gestire convocazioni e risultati.
         I giocatori possono modificare solo il proprio profilo;
         gli account in attesa non compaiono nelle convocazioni.
+      </div>
+
+      <div className="card" style={{ marginTop: 16, marginBottom: 24 }}>
+        <div className="section-head">
+          <div>
+            <h2>Ottimizza foto profilo</h2>
+            <p className="muted small-text">Riduce le immagini fino a 768 px, conserva la trasparenza e imposta una cache lunga. Le foto originali non vengono eliminate.</p>
+          </div>
+          <button className="btn small primary" onClick={optimizePhotos} disabled={optimizingPhotos || !players.some(player => player.photo_url)}>
+            {optimizingPhotos ? 'Ottimizzazione…' : 'Ottimizza tutte'}
+          </button>
+        </div>
+        {photoProgress && <p className="muted small-text" role="status">{photoProgress.done}/{photoProgress.total}{photoProgress.name ? ` · ${photoProgress.name}` : ''}</p>}
+        {photoResult && <p className="muted small-text" role="status">{photoResult}</p>}
       </div>
 
       <ActionError message={err} onRetry={retryAction} busy={saving} />
